@@ -20,7 +20,11 @@ def create_app(test_config=None):
     api.add_resource(Items, '/items/<string:piname>/')
 
     # importing the models to make sure they are known to Flask-Migrate
-    from pantryapi.models.pantryitem import PantryItem
+    from pantryapi.models.ingredient import Ingredient
+    from pantryapi.models.inventoryitem import InventoryItem
+    from pantryapi.models.recipe import Recipe
+    from pantryapi.models.tag import Tag
+    from pantryapi.models.associations import InventoryIngredients, RecipeTags, RecipeIngredients
 
     # any other registrations; blueprints, template utilities, commands
 
