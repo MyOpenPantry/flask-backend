@@ -6,10 +6,19 @@ from ..database import db
 class InventoryItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.Text)
-    upc = db.Column(db.Text)
+    upc = db.Column(db.Integer)
     amount = db.Column(db.Integer)
-    updated = db.Column(db.DateTime, default=datetime.utcnow)
+    updated = db.Column(db.DateTime, default=datetime.now)
     ingredient = db.relationship(
         'Ingredient',
         secondary='inventory_ingredients'
     )
+
+    def to_dict(self):
+        return dict(
+            id = self.id,
+            name = self.name,
+            upc = self.upc,
+            amount = self.amount,
+            updated = self.updated.strftime('%Y-%m-%d %H:%M:%S')
+        )

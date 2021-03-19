@@ -8,8 +8,8 @@ class Recipe(db.Model):
     steps = db.Column(db.Text)
     notes = db.Column(db.Text)
     rating = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_modified = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    last_modified = db.Column(db.DateTime, default=datetime.now)
     tags = db.relationship(
         'Tag',
         secondary='recipe_tags'
