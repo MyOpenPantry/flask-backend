@@ -5,7 +5,7 @@ from ..database import db
 # association tables will be used to join these with inventory items, as well as the amount needed in recipes
 class Ingredient(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128))
+    name = db.Column(db.String(128), nullable=False)
     recipes = db.relationship(
         'Recipe',
         secondary='recipe_ingredients'

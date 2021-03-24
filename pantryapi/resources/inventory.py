@@ -2,34 +2,39 @@ from flask import jsonify
 from flask_restful import Resource, reqparse
 from flask_sqlalchemy import SQLAlchemy
 
-from ..models.inventoryitem import InventoryItem
+from ..common.httpstatuscodes import HttpStatusCodes
 from ..database import db
+from ..models.inventoryitem import InventoryItem
+
 from datetime import datetime
 import sys
 
 parser = reqparse.RequestParser()
 parser.add_argument('name', type=str, help='Name of the inventory item')
-parser.add_argument('upc', type=int, help='UPC of the inventory item')
+parser.add_argument('productId', type=int, help='Product id of the inventory item')
 parser.add_argument('amount', type=int, help='Number of units of the inventory item')
 
 class Inventory(Resource):
     def get(self, invid):
         item = InventoryItem.query.get(invid)
-        if item is None:
-            return {"error":"No such item in the pantry"}
-        return { f"{item.id}":f"{item.name}" }, 201
 
-    def put(self, invid):
-        item = InventoryItem.query.get(invid)
         if item is None:
-            return {"error":"No such item in the pantry"}
+            return {"error":"No such item in the pantry"}, HttpStatusCodes.NOT_FOUND.value
+
+        return { item.id:item.to_dict() }, HttpStatusCodes.OK.value
+
+    def patch(self, invid):
+        item = InventoryItem.query.get(invid)
+
+        if item is None:
+            return {"error":"No such item in the pantry"}, HttpStatusCodes.NOT_FOUND.value
 
         args = parser.parse_args()
 
         if args['name'] is not None:
             item.name = args['name']
-        if args['upc'] is not None:
-            item.upc = args['upc']
+        if args['productId'] is not None:
+            item.productId = args['productId']
         if args['amount'] is not None:
             item.amount = args["amount"]
 
@@ -38,10 +43,36 @@ class Inventory(Resource):
         try:
             db.session.add(item)
             db.session.commit()
-        except:
+        except db.exc.DBAPIError as e:
             db.session.rollback()
-            return {"error":"Error commiting transaction"}
-        return '', 201
+            app.logger.error(f'[Inventory.put({invid}) -> \"{e}\"')
+            return {"error":"Error committing transaction"}, HttpStatusCodes.INTERNAL_SERVER_ERROR.value
+        except db.exc.SQLAlchemyError as e:
+            db.session.rollback()
+            app.logger.error(f'[Inventory.put({invid}) -> \"{e}\"')
+            return {"error":"Error committing transaction"}, HttpStatusCodes.CONFLICT.value
+
+        return '', HttpStatusCodes.OK.value
+
+    def delete(self, invid):
+        item = InventoryItem.query.get(invid)
+
+        if item is None:
+            return {"error":"No such item in the pantry"}, HttpStatusCodes.NOT_FOUND.value
+
+        try:
+            db.session.delete(item)
+            db.session.commit()
+        except db.exc.DBAPIError as e:
+            db.session.rollback()
+            app.logger.error(f'[Inventory.delete({invid}) -> \"{e}\"')
+            return {"error":"Error committing transaction"}, HttpStatusCodes.INTERNAL_SERVER_ERROR.value
+        except db.exc.SQLAlchemyError as e:
+            db.session.rollback()
+            app.logger.error(f'[Inventory.delete({invid})] -> \"{e}\"')
+            return {"error":"Error committing transaction"}, HttpStatusCodes.CONFLICT.value
+
+        return '', HttpStatusCodes.NO_CONTENT.value
 
 class InventoryList(Resource):
     def get(self):
@@ -52,20 +83,30 @@ class InventoryList(Resource):
             inventory_items = InventoryItem.query.filter(InventoryItem.name.like(name)).all()
         else:
             inventory_items = InventoryItem.query.all()
-        print(inventory_items)
-        return jsonify([x.to_dict() for x in inventory_items])
+
+        return {x.id:x.to_dict() for x in inventory_items}, HttpStatusCodes.OK.value
 
     def post(self):
         args = parser.parse_args()
-        # TODO do actual valdiation (after initial protoype is done). Also, UPC-A is 12 digits and EAN-13 is ... 13
-        if args['upc'] > 9999999999999:
-            return {'error': 'upc cannot exceed 13 digits.'}
 
-        new_item = InventoryItem(name=args['name'], upc=args['upc'], amount=args['amount'])
+        if args['name'] is None:
+            return {"error":"A name is required for new inventory items"}, HttpStatusCodes.BAD_REQUEST.value
+
+        if args['amount'] is None:
+            args['amount'] = 0
+
+        new_item = InventoryItem(name=args['name'], product_id=args['productId'], amount=args['amount'])
+
         try:
             db.session.add(new_item)
             db.session.commit()
-        except:
+        except db.exc.DBAPIError as e:
             db.session.rollback()
-            return {"error":"Error commiting transaction"}
-        return '', 201
+            app.logger.error(f'[InventoryList.post() -> \"{e}\"')
+            return {"error":"Error committing transaction"}, HttpStatusCodes.INTERNAL_SERVER_ERROR.value
+        except db.exc.SQLAlchemyError as e:
+            db.session.rollback()
+            app.logger.error(f'[Inventory.post()] -> \"{e}\"')
+            return {"error":"Error committing transaction"}, HttpStatusCodes.CONFLICT.value
+
+        return {new_item.id:new_item.to_dict()}, HttpStatusCodes.CREATED.value

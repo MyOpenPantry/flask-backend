@@ -4,8 +4,8 @@ from ..database import db
 
 class Recipe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.Text)
-    steps = db.Column(db.Text)
+    name = db.Column(db.Text, nullable=False)
+    steps = db.Column(db.Text, nullable=False)
     notes = db.Column(db.Text)
     rating = db.Column(db.Integer)
     created_at = db.Column(db.DateTime, default=datetime.now)
