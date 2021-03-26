@@ -15,12 +15,7 @@ class Recipe(db.Model):
         secondary='recipe_tags',
         back_populates="recipes",
     )
-    ingredients = db.relationship(
-        'Ingredient',
-        secondary='recipe_ingredients',
-        back_populates="recipes",
-        #cascade="all, delete-orphan"
-    )
+    ingredients = db.relationship("Association", back_populates="recipe")
 
     def to_dict(self):
         return dict(

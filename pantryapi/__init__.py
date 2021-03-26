@@ -7,16 +7,15 @@ from datetime import datetime
 import logging
 
 from pantryapi.database import db
+from pantryapi.config import app_config
 
-def create_app(test_config=None):
+def create_app(config_name):
     app = Flask(__name__)
 
-    if app.config["ENV"] == "production":
-        app.config.from_object("config.ProductionConfig")
-    elif app.config["ENV"] == "testing":
-        app.config.from_object("config.TestingConfig")
+    if config_name in app_config:
+        app.config.from_object(app_config[config_name])
     else:
-        app.config.from_object("config.DevelopmentConfig")
+        app.config.from_object(app_config['development'])
 
     logging.basicConfig(
         filename=f'logs/{datetime.date(datetime.now()).isoformat()}.log', 
@@ -28,7 +27,7 @@ def create_app(test_config=None):
     from pantryapi.models.inventoryitem import InventoryItem
     from pantryapi.models.recipe import Recipe
     from pantryapi.models.tag import Tag
-    from pantryapi.models.associations import inventory_ingredients, recipe_tags, recipe_ingredients
+    from pantryapi.models.associations import inventory_ingredients, recipe_tags, Association
 
     db.init_app(app)
     Migrate(app, db)
