@@ -8,9 +8,17 @@ class Ingredient(db.Model):
     name = db.Column(db.String(128), nullable=False)
     recipes = db.relationship(
         'Recipe',
-        secondary='recipe_ingredients'
+        secondary='recipe_ingredients',
+        back_populates="ingredients"
     )
     inventory_items = db.relationship(
         'InventoryItem',
-        secondary='inventory_ingredients'
+        secondary='inventory_ingredients',
+        back_populates="ingredient"
     )
+
+    def to_dict(self):
+        return dict(
+            id = self.id,
+            name = self.name,
+        )

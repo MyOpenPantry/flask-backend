@@ -12,9 +12,23 @@ class Recipe(db.Model):
     last_modified = db.Column(db.DateTime, default=datetime.now)
     tags = db.relationship(
         'Tag',
-        secondary='recipe_tags'
+        secondary='recipe_tags',
+        back_populates="recipes",
     )
     ingredients = db.relationship(
         'Ingredient',
-        secondary='recipe_ingredients'
+        secondary='recipe_ingredients',
+        back_populates="recipes",
+        #cascade="all, delete-orphan"
     )
+
+    def to_dict(self):
+        return dict(
+            id = self.id,
+            name = self.name,
+            steps = self.steps,
+            notes = self.notes,
+            rating = self.rating,
+            created_at = self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            last_modified = self.last_modified.strftime('%Y-%m-%d %H:%M:%S')
+        )

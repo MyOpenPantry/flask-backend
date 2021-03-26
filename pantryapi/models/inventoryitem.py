@@ -9,9 +9,12 @@ class InventoryItem(db.Model):
     product_id = db.Column(db.Integer)
     amount = db.Column(db.Integer)
     updated = db.Column(db.DateTime, default=datetime.now)
+    ingredient_id = db.Column(db.Integer, db.ForeignKey('ingredient.id'))
     ingredient = db.relationship(
         'Ingredient',
-        secondary='inventory_ingredients'
+        secondary='inventory_ingredients',
+        back_populates='inventory_items',
+        uselist=False,
     )
 
     def to_dict(self):
@@ -20,5 +23,7 @@ class InventoryItem(db.Model):
             name = self.name,
             product_id = self.product_id,
             amount = self.amount,
-            updated = self.updated.strftime('%Y-%m-%d %H:%M:%S')
+            updated = self.updated.strftime('%Y-%m-%d %H:%M:%S'),
+            ingredient_id = self.ingredient_id,
+            #ingredient = [x.to_dict() for x in self.ingredient],
         )
