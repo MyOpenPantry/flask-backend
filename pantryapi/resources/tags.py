@@ -21,7 +21,7 @@ class Tags(Resource):
         if tag is None:
             return {"error":"No such tag"}, HttpStatusCodes.NOT_FOUND.value
 
-        return { tag.id:tag.to_dict() }, HttpStatusCodes.OK.value
+        return {tag.to_dict()}, HttpStatusCodes.OK.value
 
     def patch(self, tagid):
         tag = Tag.query.get(tagid)
@@ -85,7 +85,7 @@ class TagsList(Resource):
         else:
             tags = Tag.query.all()
 
-        return {x.id:x.name for x in tags}, HttpStatusCodes.OK.value
+        return {x.to_dict() for x in tags}, HttpStatusCodes.OK.value
 
     def post(self):
         args = parser.parse_args()
@@ -115,4 +115,4 @@ class TagsList(Resource):
             current_app.logger.error(f'TagList.post() -> \"{e}\"')
             return {"error":"Error committing transaction"}, HttpStatusCodes.CONFLICT.value
 
-        return {tag.id:tag.name}, HttpStatusCodes.CREATED.value
+        return {tag.to_dict()}, HttpStatusCodes.CREATED.value

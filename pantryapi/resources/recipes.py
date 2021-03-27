@@ -97,9 +97,7 @@ class RecipesTags(Resource):
         if recipe is None:
             return {"error":"No such recipe found"}, HttpStatusCodes.NOT_FOUND.value
 
-        #tags = recipe.tags.all()
-        # TODO Do I even need to provide the recipe id here? Assume this will be answered when I implement HATEOAS
-        return { recipe.id:[x.to_dict() for x in recipe.tags] }, HttpStatusCodes.OK.value
+        return {x.to_dict() for x in recipe.tags}, HttpStatusCodes.OK.value
 
     def patch(self, recid):
         recipe = Recipe.query.get(recid)
@@ -185,7 +183,7 @@ class RecipesList(Resource):
         else:
             recipes = Recipe.query.all()
 
-        return {x.id:x.to_dict() for x in recipes}, HttpStatusCodes.OK.value
+        return {x.to_dict() for x in recipes}, HttpStatusCodes.OK.value
 
     def post(self):
         args = parser.parse_args()
@@ -209,4 +207,4 @@ class RecipesList(Resource):
             current_app.logger.error(f'RecipeList.post() -> \"{e}\"')
             return {"error":"Error committing transaction"}, HttpStatusCodes.CONFLICT.value
 
-        return {recipe.id:recipe.to_dict()}, HttpStatusCodes.CREATED.value
+        return [recipe.to_dict()], HttpStatusCodes.CREATED.value

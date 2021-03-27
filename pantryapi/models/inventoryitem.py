@@ -5,7 +5,7 @@ from ..database import db
 # items stored in the user's pantry. Is there a better word than item? Foodstuff?
 class InventoryItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.Text, nullable=False)
+    name = db.Column(db.Text, nullable=False, unique=True)
     product_id = db.Column(db.Integer)
     amount = db.Column(db.Integer)
     updated = db.Column(db.DateTime, default=datetime.now)
@@ -25,5 +25,4 @@ class InventoryItem(db.Model):
             amount = self.amount,
             updated = self.updated.strftime('%Y-%m-%d %H:%M:%S'),
             ingredient_id = self.ingredient_id,
-            #ingredient = [x.to_dict() for x in self.ingredient],
         )
