@@ -13,19 +13,19 @@ def test_inventoryitem(client):
         Test adding and retrieving an InventoryItem
     """
     start_time = datetime.now()
-    test_item = InventoryItem(name="Eggs", amount=12, product_id=12345)
+    item = InventoryItem(name="Eggs", amount=12, product_id=12345)
 
-    assert test_item.name == 'Eggs'
-    assert test_item.amount == 12
-    assert test_item.product_id == 12345
+    assert item.name == 'Eggs'
+    assert item.amount == 12
+    assert item.product_id == 12345
 
-    db.session.add(test_item)
+    db.session.add(item)
     db.session.commit()
 
-    retrieved_item = InventoryItem.query.get(test_item.id)
+    retrieved_item = InventoryItem.query.get(item.id)
 
-    assert test_item.updated >= start_time
-    assert test_item == retrieved_item
+    assert item.updated >= start_time
+    assert item == retrieved_item
 
 def test_recipe(client):
     """
@@ -39,27 +39,27 @@ def test_recipe(client):
         step 4: eat
     """
 
-    test_recipe = Recipe(name="Eggs Benedict", steps=steps, notes="Very good!", rating=5)
+    recipe = Recipe(name="Eggs Benedict", steps=steps, notes="Very good!", rating=5)
 
-    assert test_recipe.name == "Eggs Benedict"
-    assert test_recipe.steps == steps
-    assert test_recipe.notes == "Very good!"
-    assert test_recipe.rating == 5
+    assert recipe.name == "Eggs Benedict"
+    assert recipe.steps == steps
+    assert recipe.notes == "Very good!"
+    assert recipe.rating == 5
 
-    db.session.add(test_recipe)
+    db.session.add(recipe)
     db.session.commit()
 
-    retrieved_recipe = Recipe.query.get(test_recipe.id)
+    retrieved_recipe = Recipe.query.get(recipe.id)
 
     assert retrieved_recipe.created_at >= start_time
     assert retrieved_recipe.last_modified >= start_time
 
-    test_recipe.rating = 6
+    recipe.rating = 6
 
-    db.session.add(test_recipe)
+    db.session.add(recipe)
     db.session.commit()
 
-    retrieved_recipe = Recipe.query.get(test_recipe.id)
+    retrieved_recipe = Recipe.query.get(recipe.id)
 
     assert retrieved_recipe.last_modified > retrieved_recipe.created_at
 
@@ -68,32 +68,32 @@ def test_tag(client):
         Test adding and retrieving a Tag
     """
     start_time = datetime.now()
-    test_tag = Tag(name="egg")
+    tag = Tag(name="egg")
 
-    assert test_tag.name == 'egg'
+    assert tag.name == 'egg'
 
-    db.session.add(test_tag)
+    db.session.add(tag)
     db.session.commit()
 
-    retrieved_tag = Tag.query.get(test_tag.id)
+    retrieved_tag = Tag.query.get(tag.id)
 
-    assert test_tag == retrieved_tag
+    assert tag == retrieved_tag
 
 def test_ingredient(client):
     """
         Test adding and retrieving an Ingredient
     """
     start_time = datetime.now()
-    test_ingredient = Ingredient(name="Eggs")
+    ingredient = Ingredient(name="Eggs")
 
-    assert test_ingredient.name == 'Eggs'
+    assert ingredient.name == 'Eggs'
 
-    db.session.add(test_ingredient)
+    db.session.add(ingredient)
     db.session.commit()
 
-    retrieved_ingredient = Ingredient.query.get(test_ingredient.id)
+    retrieved_ingredient = Ingredient.query.get(ingredient.id)
 
-    assert test_ingredient == retrieved_ingredient
+    assert ingredient == retrieved_ingredient
 
 def test_ingredient_recipe_association(client):
     """
@@ -101,17 +101,17 @@ def test_ingredient_recipe_association(client):
     """
     start_time = datetime.now()
 
-    test_eggs = Ingredient(name="Eggs")
-    test_eggs_association = Association(amount=12, unit="eggs")
-    test_eggs_association.ingredient = test_eggs
+    eggs = Ingredient(name="Eggs")
+    eggs_association = Association(amount=12, unit="eggs")
+    eggs_association.ingredient = eggs
 
-    test_hollandaise = Ingredient(name="Hollandaise Sauce")
-    test_hollandaise_association = Association(amount=0.5, unit="cup")
-    test_hollandaise_association.ingredient = test_hollandaise
+    hollandaise = Ingredient(name="Hollandaise Sauce")
+    hollandaise_association = Association(amount=0.5, unit="cup")
+    hollandaise_association.ingredient = hollandaise
 
-    test_bacon = Ingredient(name="Canadian Bacon")
-    test_bacon_association = Association(amount=2, unit="slices")
-    test_bacon_association.ingredient = test_bacon
+    bacon = Ingredient(name="Canadian Bacon")
+    bacon_association = Association(amount=2, unit="slices")
+    bacon_association.ingredient = bacon
 
     steps = """
         step 1: some action
@@ -119,29 +119,29 @@ def test_ingredient_recipe_association(client):
         step 3: have some fun
         step 4: eat
     """
-    test_recipe = Recipe(name="Eggs Benedict", steps=steps, notes="Very good!", rating=5)
-    test_recipe.ingredients.append(test_eggs_association)
-    test_recipe.ingredients.append(test_hollandaise_association)
-    test_recipe.ingredients.append(test_bacon_association)
+    recipe = Recipe(name="Eggs Benedict", steps=steps, notes="Very good!", rating=5)
+    recipe.ingredients.append(eggs_association)
+    recipe.ingredients.append(hollandaise_association)
+    recipe.ingredients.append(bacon_association)
 
-    db.session.add(test_recipe)
+    db.session.add(recipe)
     db.session.commit()
 
     # verify that the association was created
-    assert len(test_recipe.ingredients) == 3
-    assert test_eggs_association in test_recipe.ingredients
-    assert test_hollandaise_association in test_recipe.ingredients
-    assert test_bacon_association in test_recipe.ingredients
+    assert len(recipe.ingredients) == 3
+    assert eggs_association in recipe.ingredients
+    assert hollandaise_association in recipe.ingredients
+    assert bacon_association in recipe.ingredients
 
     # remove bacon from the recipe
-    db.session.delete(test_bacon_association)
+    db.session.delete(bacon_association)
 
     db.session.commit()
 
     # make sure just the association was deleted, bacon should still exist as an ingredient
-    assert len(test_recipe.ingredients) == 2
-    assert test_bacon_association not in test_recipe.ingredients
-    assert Ingredient.query.get(test_bacon.id) is not None
+    assert len(recipe.ingredients) == 2
+    assert bacon_association not in recipe.ingredients
+    assert Ingredient.query.get(bacon.id) is not None
     assert len(Ingredient.query.all()) == 3
 
 def test_recipe_tag_association(client):
@@ -200,4 +200,36 @@ def test_inventoryitem_ingredient_association(client):
         Test adding an Ingredient to an InventoryItem
     """
 
-    pass
+    start_time = datetime.now()
+    eggs = Ingredient(name="Eggs")
+    kroger_eggs = InventoryItem(name="Kroger Eggs", amount=12, product_id=12345)
+    costco_eggs = InventoryItem(name="Costco Eggs", amount=13, product_id=54321)
+
+    db.session.add_all([
+        eggs,
+        kroger_eggs,
+        costco_eggs
+    ])
+    db.session.commit()
+
+    assert len(eggs.inventory_items) == 0
+    assert kroger_eggs.ingredient is None
+    assert costco_eggs.ingredient is None
+
+    kroger_eggs.ingredient = eggs
+    costco_eggs.ingredient = eggs
+
+    db.session.add_all([
+        eggs,
+        kroger_eggs,
+        costco_eggs,
+    ])
+    db.session.commit()
+
+    costco_eggs.ingredient = None
+
+    db.session.add(costco_eggs)
+    db.session.commit()
+
+    assert costco_eggs.ingredient is None
+    assert kroger_eggs.ingredient == eggs
