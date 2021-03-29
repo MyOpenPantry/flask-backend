@@ -21,11 +21,18 @@ class Items(MethodView):
     @blp.response(200, ItemSchema(many=True))
     @blp.paginate(SQLCursorPage)
     def get(self, args):
-        """List recipes"""
+        """List items"""
+        name = args.pop('name', None)
         ingredient_id = args.pop('ingredient_id', None)
+        product_id = args.pop('product_id', None)
+
         ret = Item.query.filter_by(**args)
+        if name is not None:
+            ret = ret.join(Item).filter(Item.name.like(name))
+        if product_id is not None:
+            ret = ret.join(Item).filter(Item.product_id == product_id)
         if ingredient_id is not None:
-            ret = ret.join(Item.ingredients).filter(Ingredient.id == ingredient_id)
+            ret = ret.join(Item.ingredients).filter(Item.ingredient.id == ingredient_id)
         return ret
 
     @blp.etag
@@ -51,7 +58,7 @@ class ItemsById(MethodView):
     @blp.arguments(ItemSchema)
     @blp.response(200, ItemSchema)
     def put(self, new_item, item_id):
-        """Update an existing team"""
+        """Update an existing item"""
         item = Item.query.get_or_404(item_id)
         blp.check_etag(item, ItemSchema)
         ItemSchema().update(item, new_item)

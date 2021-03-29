@@ -32,8 +32,38 @@ class Ingredients(MethodView):
     @blp.arguments(IngredientSchema)
     @blp.response(201, IngredientSchema)
     def post(self, new_item):
-        """Add a new recipe"""
+        """Add a new ingredient"""
         ingredient = Ingredient(**new_item)
         db.session.add(ingredient)
         db.session.commit()
         return ingredient
+
+@blp.route('/<int:ingredient_id>')
+class IngredientsById(MethodView):
+
+    @blp.etag
+    @blp.response(200, IngredientSchema)
+    def get(self, ingredient_id):
+        """Get ingredient by ID"""
+        return Ingredient.query.get_or_404(ingredient_id)
+
+    @blp.etag
+    @blp.arguments(IngredientSchema)
+    @blp.response(200, IngredientSchema)
+    def put(self, new_ingredient, ingredient_id):
+        """Update an existing ingredient"""
+        ingredient = Ingredient.query.get_or_404(ingredient_id)
+        blp.check_etag(ingredient, IngredientSchema)
+        IngredientSchema().update(ingredient, new_ingredient)
+        db.session.add(ingredient)
+        db.session.commit()
+        return ingredient
+
+    @blp.etag
+    @blp.response(204)
+    def delete(self, ingredient_id):
+        """Delete an ingredient"""
+        ingredient = Ingredient.query.get_or_404(ingredient_id)
+        blp.check_etag(ingredient, IngredientSchema)
+        db.session.delete(ingredient)
+        db.session.commit()

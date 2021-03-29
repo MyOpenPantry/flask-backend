@@ -9,6 +9,8 @@ class Ingredient(db.Model):
 
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String(128), nullable=False)
-    items = relationship('Item', back_populates="ingredient")
 
+    # many to one, with Ingredient being the one 
+    items = relationship('Item', back_populates="ingredient")
+    # many to many
     recipes = relationship("RecipeIngredients", back_populates="ingredient")

@@ -13,6 +13,7 @@ class Item(db.Model):
     product_id = sa.Column(sa.Integer)
     amount = sa.Column(sa.Integer)
     updated = sa.Column(sa.DateTime, default=datetime.now)
+
+    # Many to one, each Item is one type of ingredient (eg Item('Kroger Large Eggs') -> Ingredient('Eggs')) 
     ingredient_id = sa.Column(sa.Integer, sa.ForeignKey('ingredients.id'))
     ingredient = relationship("Ingredient", back_populates="items")
-

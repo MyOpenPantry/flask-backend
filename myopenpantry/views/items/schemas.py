@@ -12,4 +12,5 @@ class ItemSchema(AutoSchema):
 
 class ItemQueryArgsSchema(Schema):
     name = ma.fields.Str()
+    product_id = ma.fields.Int()
     ingredient_id = ma.fields.Int()
