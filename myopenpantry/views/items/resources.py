@@ -17,7 +17,7 @@ blp = Blueprint(
 class Items(MethodView):
 
     @blp.etag
-    @blp.arguments(ItemQueryArgsSchema, location='query')
+    @blp.arguments(ItemQueryArgsSchema)
     @blp.response(200, ItemSchema(many=True))
     @blp.paginate(SQLCursorPage)
     def get(self, args):
@@ -27,12 +27,18 @@ class Items(MethodView):
         product_id = args.pop('product_id', None)
 
         ret = Item.query.filter_by(**args)
-        if name is not None:
-            ret = ret.join(Item).filter(Item.name.like(name))
         if product_id is not None:
-            ret = ret.join(Item).filter(Item.product_id == product_id)
+            ret = ret.filter(Item.product_id == product_id)
+            #ret = Item.query.filter(Item.product_id == product_id)
         if ingredient_id is not None:
-            ret = ret.join(Item.ingredients).filter(Item.ingredient.id == ingredient_id)
+            ret = ret.filter(Item.ingredient_id == ingredient_id)
+            #ret = Item.query.filter(Item.ingredient_id == ingredient_id)
+        if name is not None:
+            name = f"%{name}%"
+            ret = ret.filter(Item.name.like(name))
+            #ret = Item.query.filter(Item.name.like(name))
+        #else:
+
         return ret
 
     @blp.etag
