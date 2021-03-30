@@ -6,6 +6,7 @@ from myopenpantry.extensions.database import db
 from myopenpantry.models import Item, Ingredient
 
 from .schemas import ItemSchema, ItemQueryArgsSchema
+from ..ingredients.schemas import IngredientSchema
 
 blp = Blueprint(
     'Items',
@@ -22,19 +23,20 @@ class Items(MethodView):
     @blp.response(200, ItemSchema(many=True))
     @blp.paginate(SQLCursorPage)
     def get(self, args):
-        """List items"""
+        """List all items"""
         name = args.pop('name', None)
         ingredient_id = args.pop('ingredient_id', None)
         product_id = args.pop('product_id', None)
 
         ret = Item.query.filter_by(**args)
 
+        # TODO does marshmallow have a way to only allow one of these at a time?
         # product_id > ingredient_id > name for search order
         if product_id is not None:
             ret = ret.filter(Item.product_id == product_id)
-        if ingredient_id is not None:
+        elif ingredient_id is not None:
             ret = ret.filter(Item.ingredient_id == ingredient_id)
-        if name is not None:
+        elif name is not None:
             name = f"%{name}%"
             ret = ret.filter(Item.name.like(name))
 
@@ -89,3 +91,12 @@ class ItemsById(MethodView):
         blp.check_etag(item, ItemSchema)
         db.session.delete(item)
         db.session.commit()
+
+@blp.route('/<int:item_id>/ingredient')
+class ItemsIngredient(MethodView):
+
+    @blp.etag
+    @blp.response(200, IngredientSchema)
+    def get(self, item_id):
+        """Get the ingredient associated with the item"""
+        return Item.query.get_or_404(item_id).ingredient

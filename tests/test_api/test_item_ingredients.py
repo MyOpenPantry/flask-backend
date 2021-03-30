@@ -125,3 +125,39 @@ class TestItemIngredients:
         )
 
         assert response.status_code == 422
+
+    def test_get_item_ingredient(self, app):
+        client = app.test_client()
+
+        new_ingredient = {
+            'name':'grape',
+        }
+
+        response = client.post('/ingredients/', 
+            headers = {"Content-Type": "application/json"},
+            json = new_ingredient,
+        )
+
+        assert response.status_code == 201
+
+        ingredient = response.json
+
+        new_item = {
+            'name':'Champagne Grapes',
+            'amount':567,
+            'ingredient_id': ingredient['id']
+        }
+
+        response = client.post('/items/', 
+            headers = {"Content-Type": "application/json"},
+            json = new_item,
+        )
+
+        assert response.status_code == 201
+
+        item = response.json
+
+        response = client.get(f'/items/{item["id"]}/ingredient')
+
+        assert response.status_code == 200
+        assert response.json == ingredient
