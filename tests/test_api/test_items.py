@@ -188,6 +188,7 @@ class TestItems:
 
         assert response.status_code == 422
 
+    # this also indirectly tests associations since I also want to test querying by ingredient_id
     def test_query_item(self, app):
         client = app.test_client()
 
