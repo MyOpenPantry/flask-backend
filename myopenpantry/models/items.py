@@ -10,8 +10,9 @@ class Item(db.Model):
 
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.Text, nullable=False, unique=True)
+    # is nullable, specifically for produce since not everyone will want to use PLUS
     product_id = sa.Column(sa.Integer)
-    amount = sa.Column(sa.Integer)
+    amount = sa.Column(sa.Integer, nullable=False, default=0)
     updated = sa.Column(sa.DateTime, default=datetime.now, onupdate=datetime.now)
 
     # Many to one, each Item is one type of ingredient (eg Item('Kroger Large Eggs') -> Ingredient('Eggs')) 
