@@ -1,5 +1,6 @@
 import pytest, json
 from datetime import datetime
+import dateutil.parser
 
 class TestItems:
     def test_get_item(self, app):
@@ -33,6 +34,99 @@ class TestItems:
         for k,v in new_item.items():
             assert response.json[k] == v
 
+    def test_put_item(self, app):
+        client = app.test_client()
+
+        new_item = {
+            'name':'Peanut Butter',
+            'amount':1,
+            'product_id':1000239983223,
+        }
+
+        response = client.post('/items/', 
+            headers = {"Content-Type": "application/json"},
+            data = json.dumps(new_item),
+        )
+
+        assert response.status_code == 201
+
+        id = response.json['id']
+        updated = response.json['updated']
+        etag = response.headers['ETag']
+
+        update_item = {
+            'name':'Peanut Butter',
+            'amount':2,
+            'product_id':1000239983223,
+        }
+        response = client.put(f'/items/{id}',
+            headers = {"If-Match": etag},
+            json = update_item
+        )
+
+        assert response.status_code == 200
+
+        response = client.get(f'/items/{id}') 
+
+        assert response.status_code == 200
+        assert dateutil.parser.parse(response.json['updated']) > dateutil.parser.parse(updated)
+
+    def test_invalid_put_item(sel, app):
+        client = app.test_client()
+
+        new_item = {
+            'name':'Grape Jelly',
+            'amount':44,
+            'product_id':1033239983223,
+        }
+
+        response = client.post('/items/', 
+            headers = {"Content-Type": "application/json"},
+            data = json.dumps(new_item),
+        )
+
+        assert response.status_code == 201
+
+        id = response.json['id']
+        updated = response.json['updated']
+        etag = response.headers['ETag']
+
+        # updated is read only
+        update_item = {
+            'name':'Grape Jelly',
+            'amount':44,
+            'product_id':1033239983223,
+            'updated':'2021-03-30T14:55:30.500000'
+        }
+        response = client.put(f'/items/{id}',
+            headers = {"If-Match": etag},
+            json = update_item
+        )
+
+        assert response.status_code == 422
+
+        # no name
+        update_item = {
+            'amount':44,
+        }
+        response = client.put(f'/items/{id}',
+            headers = {"If-Match": etag},
+            json = update_item
+        )
+
+        assert response.status_code == 422
+
+        # no amount
+        update_item = {
+            'name':'Grape Jelly',
+        }
+        response = client.put(f'/items/{id}',
+            headers = {"If-Match": etag},
+            json = update_item
+        )
+
+        assert response.status_code == 422
+
     def test_query_item(self, app):
         client = app.test_client()
 
@@ -46,6 +140,7 @@ class TestItems:
             },
         ]
 
+        # collect ingredient ids for searching later
         ingredient_ids = {}
 
         for ingredient in new_ingredients:
@@ -151,6 +246,22 @@ class TestItems:
 
         assert response.status_code == 422
 
+        # invalid ingredient
+        new_item = {
+            'name':'Mustard',
+            'amount':0,
+            'product_id':000000,
+            'ingredient_id':1
+        }
+
+        response = client.post('/items/', 
+            headers = {"Content-Type": "application/json"},
+            data = json.dumps(new_item),
+        )
+
+        assert response.status_code == 422
+
+
     def test_delete_item(self, app):
         client = app.test_client()
 
@@ -175,6 +286,39 @@ class TestItems:
         )
 
         assert response.status_code == 204
+
+    def test_delete_invalid_item(self, app):
+        client = app.test_client()
+
+        # DELETE requires an etag, so a valid item must exist and be deleted first
+        new_item = {
+            'name':'Kroger Eggs',
+            'amount':12,
+            'product_id':123456,
+        }
+
+        response = client.post('/items/', 
+            headers = {"Content-Type": "application/json"},
+            data = json.dumps(new_item),
+        )
+
+        assert response.status_code == 201
+
+        id = response.json['id']
+        etag = response.headers['ETag']
+
+        response = client.delete(f'/items/{id}',
+            headers={'If-Match': etag}
+        )
+
+        assert response.status_code == 204
+
+        # try to DELETE again
+        response = client.delete(f'/items/{id}',
+            headers={'If-Match': etag}
+        )
+
+        assert response.status_code == 404
 
 class TestIngredients:
     def test_get_empty_ingredients(self, app):

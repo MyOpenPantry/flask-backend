@@ -1,4 +1,5 @@
 from flask.views import MethodView
+from flask_smorest import abort
 
 from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
@@ -27,17 +28,15 @@ class Items(MethodView):
         product_id = args.pop('product_id', None)
 
         ret = Item.query.filter_by(**args)
+
+        # product_id > ingredient_id > name for search order
         if product_id is not None:
             ret = ret.filter(Item.product_id == product_id)
-            #ret = Item.query.filter(Item.product_id == product_id)
         if ingredient_id is not None:
             ret = ret.filter(Item.ingredient_id == ingredient_id)
-            #ret = Item.query.filter(Item.ingredient_id == ingredient_id)
         if name is not None:
             name = f"%{name}%"
             ret = ret.filter(Item.name.like(name))
-            #ret = Item.query.filter(Item.name.like(name))
-        #else:
 
         return ret
 
@@ -47,8 +46,13 @@ class Items(MethodView):
     def post(self, new_item):
         """Add a new item"""
         item = Item(**new_item)
-        db.session.add(item)
-        db.session.commit()
+        try:
+            db.session.add(item)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            # TODO be more descriptive and log
+            abort(422)
         return item
 
 @blp.route('/<int:item_id>')
@@ -68,8 +72,13 @@ class ItemsById(MethodView):
         item = Item.query.get_or_404(item_id)
         blp.check_etag(item, ItemSchema)
         ItemSchema().update(item, new_item)
-        db.session.add(item)
-        db.session.commit()
+        try:
+            db.session.add(item)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            # TODO be more descriptive and log
+            abort(422)
         return item
 
     @blp.etag
