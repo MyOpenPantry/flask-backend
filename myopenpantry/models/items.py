@@ -12,7 +12,7 @@ class Item(db.Model):
     name = sa.Column(sa.Text, nullable=False, unique=True)
     product_id = sa.Column(sa.Integer)
     amount = sa.Column(sa.Integer)
-    updated = sa.Column(sa.DateTime, default=datetime.now)
+    updated = sa.Column(sa.DateTime, default=datetime.now, onupdate=datetime.now)
 
     # Many to one, each Item is one type of ingredient (eg Item('Kroger Large Eggs') -> Ingredient('Eggs')) 
     ingredient_id = sa.Column(sa.Integer, sa.ForeignKey('ingredients.id'))
