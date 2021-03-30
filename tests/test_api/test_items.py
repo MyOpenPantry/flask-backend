@@ -27,6 +27,29 @@ class TestItems:
         assert response.status_code == 200
         assert len(response.json) == 1
 
+    def test_get_item(self, app):
+        client = app.test_client()
+
+        new_item = {
+            'name':'Rice',
+            'amount':1340,
+        }
+
+        response = client.post('/items/', 
+            headers = {"Content-Type": "application/json"},
+            data = json.dumps(new_item),
+        )
+
+        assert response.status_code == 201
+
+        id = response.json['id']
+
+        response = client.get(f'/items/{id}')
+
+        assert response.status_code == 200
+        for k,v in new_item.items():
+            assert response.json[k] == v
+
     def test_get_invalid_item(self, app):
         client = app.test_client()
 
@@ -71,6 +94,37 @@ class TestItems:
         assert response.status_code == 200
         for k,v in new_item.items():
             assert response.json[k] == v
+
+    def test_post_invalid_item(self, app):
+        client = app.test_client()
+
+        # missing name
+        new_item = {
+            'amount':0,
+            'product_id':000000,
+        }
+
+        response = client.post('/items/', 
+            headers = {"Content-Type": "application/json"},
+            data = json.dumps(new_item),
+        )
+
+        assert response.status_code == 422
+
+        # invalid ingredient
+        new_item = {
+            'name':'Mustard',
+            'amount':0,
+            'product_id':000000,
+            'ingredient_id':1
+        }
+
+        response = client.post('/items/', 
+            headers = {"Content-Type": "application/json"},
+            data = json.dumps(new_item),
+        )
+
+        assert response.status_code == 422
 
     def test_post_existing_item(self, app):
         client = app.test_client()
@@ -290,38 +344,6 @@ class TestItems:
 
         assert response.status_code == 200
         assert len(response.json) == 2
-
-    def test_post_invalid_item(self, app):
-        client = app.test_client()
-
-        # missing name
-        new_item = {
-            'amount':0,
-            'product_id':000000,
-        }
-
-        response = client.post('/items/', 
-            headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_item),
-        )
-
-        assert response.status_code == 422
-
-        # invalid ingredient
-        new_item = {
-            'name':'Mustard',
-            'amount':0,
-            'product_id':000000,
-            'ingredient_id':1
-        }
-
-        response = client.post('/items/', 
-            headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_item),
-        )
-
-        assert response.status_code == 422
-
 
     def test_delete_item(self, app):
         client = app.test_client()
