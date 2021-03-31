@@ -2,9 +2,11 @@ from flask.views import MethodView
 
 from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
-from myopenpantry.models import Recipe, Tag
+from myopenpantry.models import Recipe
 
 from .schemas import RecipeSchema, RecipeQueryArgsSchema
+from ..tags.schemas import TagSchema
+from ..ingredients.schemas import IngredientSchema
 
 blp = Blueprint(
     'Recipes',
@@ -17,25 +19,42 @@ blp = Blueprint(
 class Recipes(MethodView):
 
     @blp.etag
-    @blp.arguments(RecipeQueryArgsSchema, location='query')
+    @blp.arguments(RecipeQueryArgsSchema)
     @blp.response(200, RecipeSchema(many=True))
     @blp.paginate(SQLCursorPage)
     def get(self, args):
         """List recipes"""
+        ingredient_id = args.pop('ingredient_id', None)
         tag_id = args.pop('tag_id', None)
+        name = args.pop('name', None)
+
         ret = Recipe.query.filter_by(**args)
-        if tag_id is not None:
-            ret = ret.join(Recipe.tags).filter(Tag.id == tag_id)
+
+        # TODO does marshmallow have a way to only allow one of these at a time?
+        if ingredient_id is not None:
+            ret = ret.filter(ingredient_id in Recipe.ingredients)
+        elif tag_id is not None:
+            ret = ret.filter(tag_id in Recipe.tags)
+        elif name is not None:
+            name = f"%{name}%"
+            ret = ret.filter(Recipe.name.like(name))
+
         return ret
 
     @blp.etag
     @blp.arguments(RecipeSchema)
     @blp.response(201, RecipeSchema)
-    def post(self, new_item):
+    def post(self, new_recipe):
         """Add a new recipe"""
-        recipe = Recipe(**new_item)
-        db.session.add(recipe)
-        db.session.commit()
+        recipe = Recipe(**new_recipe)
+
+        try:
+            db.session.add(recipe)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            abort(422)
+
         return recipe
 
 @blp.route('/<int:recipe_id>')
@@ -51,19 +70,90 @@ class RecipesbyID(MethodView):
     @blp.arguments(RecipeSchema)
     @blp.response(200, RecipeSchema)
     def put(self, new_recipe, recipe_id):
-        """Update an existing member"""
+        """Update an existing recipe"""
         recipe = Recipe.query.get_or_404(recipe_id)
+
         blp.check_etag(recipe, RecipeSchema)
+
         RecipeSchema().update(recipe, new_recipe)
-        db.session.add(recipe)
-        db.session.commit()
+
+        try:
+            db.session.add(recipe)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            abort(422)
+
         return recipe
 
     @blp.etag
     @blp.response(204)
     def delete(self, recipe_id):
         """Delete a recipe"""
-        recipe = Member.query.get_or_404(recipe_id)
+        recipe = Recipe.query.get_or_404(recipe_id)
+
         blp.check_etag(recipe, RecipeSchema)
+
         db.session.delete(recipe)
         db.session.commit()
+
+@blp.route('/<int:recipe_id>/tags')
+class RecipeTags(MethodView):
+
+    @blp.etag
+    @blp.response(200, TagSchema(many=True))
+    def get(self, recipe_id):
+        """Get tags associated with a recipe"""
+        return Recipe.query.get_or_404(recipe_id).tags
+
+@blp.route('/<int:recipe_id>/tags/<int:tag_id>')
+class RecipeTagsDelete(MethodView):
+
+    @blp.etag
+    @blp.response(204)
+    def delete(self, recipe_id, tag_id):
+        """Delete association between a recipe and tag"""
+        recipe = Recipe.query.get_or_404(recipe_id)
+        tag = recipe.tags.get_or_404(tag_id)
+
+        blp.check_etag(recipe, RecipeSchema)
+
+        recipe.tags.remove(tag)
+
+        try:
+            db.session.add(recipe)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            abort(422)
+
+
+@blp.route('/<int:recipe_id>/ingredients')
+class RecipeIngredients(MethodView):
+
+    @blp.etag
+    @blp.response(200, IngredientSchema(many=True))
+    def get(self, recipe_id):
+        """Get ingredients associated with a recipe"""
+        return Recipe.query.get_or_404(recipe_id).ingredients
+
+@blp.route('/<int:recipe_id>/tags/<int:ingredient_id>')
+class RecipeIngredientsDelete(MethodView):
+
+    @blp.etag
+    @blp.response(204)
+    def delete(self, recipe_id, ingredient_id):
+        """Delete association between a recipe and ingredient"""
+        recipe = Recipe.query.get_or_404(recipe_id)
+        ingredient = recipe.ingredients.get_or_404(ingredient_id)
+
+        blp.check_etag(recipe, RecipeSchema)
+
+        recipe.ingredients.remove(ingredient)
+
+        try:
+            db.session.add(recipe)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            abort(422)

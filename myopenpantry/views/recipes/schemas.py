@@ -13,3 +13,4 @@ class RecipeSchema(AutoSchema):
 class RecipeQueryArgsSchema(Schema):
     name = ma.fields.Str()
     tag_id = ma.fields.Int()
+    ingredient_id = ma.fields.Int()

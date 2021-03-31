@@ -162,7 +162,7 @@ class TestItemIngredients:
         assert response.status_code == 200
         assert response.json == ingredient
 
-    def test_get_invalid_item_ingredient(self, app):
+    def test_get_empty_item_ingredient(self, app):
         client = app.test_client()
 
         new_item = {
@@ -182,3 +182,9 @@ class TestItemIngredients:
         response = client.get(f'/items/{item["id"]}/ingredient')
 
         assert response.json == {}
+
+    def test_get_ingredient_items(self, app):
+        pass
+
+    def test_get_empty_ingredient_items(self, app):
+        pass
