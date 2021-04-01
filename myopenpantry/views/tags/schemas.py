@@ -2,7 +2,7 @@ import marshmallow as ma
 from marshmallow_sqlalchemy import field_for
 
 from myopenpantry.extensions.api import Schema, AutoSchema
-from myopenpantry.models.recipes import Tag
+from myopenpantry.models.tags import Tag
 
 class TagSchema(AutoSchema):
     id = field_for(Tag, "id", dump_only=True)
