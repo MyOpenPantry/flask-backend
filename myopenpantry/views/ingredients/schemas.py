@@ -11,6 +11,6 @@ class IngredientSchema(AutoSchema):
         table = Ingredient.__table__
 
 class IngredientQueryArgsSchema(Schema):
-    name = ma.fields.Str()
-    recipe_id = ma.fields.Int()
-    item_id = ma.fields.Int()
+    names = ma.fields.List(ma.fields.Str(validate=ma.validate.Length(min=1)))
+    recipe_ids = ma.fields.List(ma.fields.Int(strict=True, validate=ma.validate.Range(min=1)))
+    item_ids = ma.fields.List(ma.fields.Int(strict=True, validate=ma.validate.Range(min=1)))

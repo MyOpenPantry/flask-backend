@@ -11,5 +11,5 @@ class TagSchema(AutoSchema):
         table = Tag.__table__
 
 class TagQueryArgsSchema(Schema):
-    name = ma.fields.Str()
-    recipe_id = ma.fields.Int()
+    names = ma.fields.List(ma.fields.Str(validate=ma.validate.Length(min=1)))
+    recipe_ids = ma.fields.List(ma.fields.Int(strict=True, validate=ma.validate.Range(min=1)))

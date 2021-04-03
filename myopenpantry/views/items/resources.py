@@ -1,6 +1,8 @@
 from flask.views import MethodView
 from flask_smorest import abort
 
+from sqlalchemy import or_
+
 from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
 from myopenpantry.models import Item, Ingredient
@@ -24,21 +26,22 @@ class Items(MethodView):
     @blp.paginate(SQLCursorPage)
     def get(self, args):
         """List all items"""
-        name = args.pop('name', None)
-        ingredient_id = args.pop('ingredient_id', None)
-        product_id = args.pop('product_id', None)
+        names = args.pop('names', None)
+        ingredient_ids = args.pop('ingredient_ids', None)
+        product_ids = args.pop('product_ids', None)
 
         ret = Item.query.filter_by(**args)
 
         # TODO does marshmallow have a way to only allow one of these at a time?
         # product_id > ingredient_id > name for search order
-        if product_id is not None:
-            ret = ret.filter(Item.product_id == product_id)
-        elif ingredient_id is not None:
-            ret = ret.filter(Item.ingredient_id == ingredient_id)
-        elif name is not None:
-            name = f"%{name}%"
-            ret = ret.filter(Item.name.like(name))
+        if product_ids is not None:
+            ret = ret.filter(Item.product_id.in_(product_ids))
+        elif ingredient_ids is not None:
+            ret = ret.filter(Item.ingredient_id.in_(ingredient_ids))
+        elif names is not None:
+            # TODO SQLite does not have "ANY"
+            # ret = ret.filter(Item.name.like(any_([f"%{name}%" for name in names])))
+            ret = ret.filter(or_(Item.name.like(f"%{name}%") for name in names))
 
         return ret
 

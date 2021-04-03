@@ -6,11 +6,13 @@ from myopenpantry.models.recipes import Recipe
 
 class RecipeSchema(AutoSchema):
     id = field_for(Recipe, "id", dump_only=True)
+    created_at = field_for(Recipe, "created_at", dump_only=True)
+    updated_at = field_for(Recipe, "updated_at", dump_only=True)
 
     class Meta(AutoSchema.Meta):
         table = Recipe.__table__
 
 class RecipeQueryArgsSchema(Schema):
-    name = ma.fields.Str()
-    tag_id = ma.fields.Int()
-    ingredient_id = ma.fields.Int()
+    names = ma.fields.List(ma.fields.Str(validate=ma.validate.Length(min=1)))
+    tag_ids = ma.fields.List(ma.fields.Int(strict=True, validate=ma.validate.Range(min=1)))
+    ingredient_ids = ma.fields.List(ma.fields.Int(strict=True, validate=ma.validate.Range(min=1)))

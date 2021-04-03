@@ -1,14 +1,19 @@
 import pytest, json
+from datetime import datetime
+import dateutil.parser
 
 class TestIngredients:
-    def test_get_empty_ingredients(self, app):
+    def test_query_recipes(self, app):
+        pass
+
+    def test_get_empty(self, app):
         client = app.test_client()
 
         response = client.get('/ingredients/')
         assert response.status_code == 200
         assert response.json == []
 
-    def test_get_nonempty_ingredients(self, app):
+    def test_get_nonempty(self, app):
         client = app.test_client()
 
         ingredients = [
@@ -39,7 +44,7 @@ class TestIngredients:
         assert response.status_code == 200
         assert len(response.json) == len(ingredients)
 
-    def test_get_ingredient(self, app):
+    def test_get(self, app):
         client = app.test_client()
 
         new_ingredient = {
@@ -61,7 +66,7 @@ class TestIngredients:
         for k,v in new_ingredient.items():
             assert response.json[k] == v
 
-    def test_get_invalid_ingredient(self, app):
+    def test_get_invalid(self, app):
         client = app.test_client()
 
         new_ingredient = {
@@ -81,7 +86,7 @@ class TestIngredients:
 
         assert response.status_code == 404
 
-    def test_post_get_ingredient(self, app):
+    def test_post(self, app):
         client = app.test_client()
 
         new_ingredient = {
@@ -103,7 +108,7 @@ class TestIngredients:
         for k,v in new_ingredient.items():
             assert response.json[k] == v
 
-    def test_post_invalid_ingredient(self, app):
+    def test_post_invalid(self, app):
         client = app.test_client()
 
         # missing name
@@ -116,7 +121,10 @@ class TestIngredients:
 
         assert response.status_code == 422
 
-    def test_put_ingredient(self, app):
+    def test_post_existing(self, app):
+        pass
+
+    def test_put(self, app):
         client = app.test_client()
 
         new_ingredient = {
@@ -147,7 +155,7 @@ class TestIngredients:
 
         assert response.status_code == 200
 
-    def test_invalid_put_ingredient(self, app):
+    def test_invalid_put(self, app):
         client = app.test_client()
 
         new_ingredient = {
@@ -173,12 +181,10 @@ class TestIngredients:
 
         assert response.status_code == 422
 
-    # TODO finalize recipes before testing this
-    def test_query_ingredient(self, app):
+    def test_query(self, app):
         pass
 
-
-    def test_delete_ingredient(self, app):
+    def test_delete(self, app):
         client = app.test_client()
 
         new_ingredient = {
@@ -201,7 +207,7 @@ class TestIngredients:
 
         assert response.status_code == 204
 
-    def test_delete_invalid_ingredient(self, app):
+    def test_delete_invalid(self, app):
         client = app.test_client()
 
         new_ingredient = {

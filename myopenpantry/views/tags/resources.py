@@ -23,12 +23,12 @@ class Tags(MethodView):
     @blp.paginate(SQLCursorPage)
     def get(self, args):
         """List tags"""
-        recipe_id = args.pop('recipe_id', None)
+        recipe_ids = args.pop('recipe_id', None)
 
         ret = Tag.query.filter_by(**args)
 
-        if recipe_id is not None:
-            ret = ret.filter(recipe_id in Tag.recipes)
+        if recipe_ids is not None:
+            ret = ret.filter(Tag.recipes.id in recipe_ids)
 
         return ret
 
@@ -48,7 +48,7 @@ class Tags(MethodView):
 
         return tag
 
-@blp.route('/<int:recipe_id>')
+@blp.route('/<int:tag_id>')
 class TagsbyID(MethodView):
 
     @blp.etag

@@ -2,7 +2,7 @@ import pytest, json
 from datetime import datetime
 import dateutil.parser
 
-class TestRecipes:
+class TestTags:
     def test_get_empty(self, app):
         pass
 

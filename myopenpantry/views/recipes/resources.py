@@ -4,6 +4,8 @@ from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
 from myopenpantry.models import Recipe
 
+from sqlalchemy import or_
+
 from .schemas import RecipeSchema, RecipeQueryArgsSchema
 from ..tags.schemas import TagSchema
 from ..ingredients.schemas import IngredientSchema
@@ -24,20 +26,19 @@ class Recipes(MethodView):
     @blp.paginate(SQLCursorPage)
     def get(self, args):
         """List recipes"""
-        ingredient_id = args.pop('ingredient_id', None)
-        tag_id = args.pop('tag_id', None)
-        name = args.pop('name', None)
+        ingredient_ids = args.pop('ingredient_ids', None)
+        tag_ids = args.pop('tag_ids', None)
+        names = args.pop('names', None)
 
         ret = Recipe.query.filter_by(**args)
 
         # TODO does marshmallow have a way to only allow one of these at a time?
-        if ingredient_id is not None:
-            ret = ret.filter(ingredient_id in Recipe.ingredients)
-        elif tag_id is not None:
-            ret = ret.filter(tag_id in Recipe.tags)
-        elif name is not None:
-            name = f"%{name}%"
-            ret = ret.filter(Recipe.name.like(name))
+        if ingredient_ids is not None:
+            ret = ret.filter(Recipe.ingredients.in_(ingredient_ids))
+        elif tag_ids is not None:
+            ret = ret.filter(Recipe.tags.id.in_(tag_ids))
+        elif names is not None:
+            ret = ret.filter(or_(Recipe.name.like(f"%{name}%") for name in names))
 
         return ret
 

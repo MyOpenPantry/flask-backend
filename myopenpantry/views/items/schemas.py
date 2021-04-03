@@ -6,13 +6,12 @@ from myopenpantry.models.items import Item
 
 class ItemSchema(AutoSchema):
     id = field_for(Item, "id", dump_only=True)
-    updated = field_for(Item, "updated", dump_only=True)
+    updated_at = field_for(Item, "updated_at", dump_only=True)
 
     class Meta(AutoSchema.Meta):
         table = Item.__table__
-        #index_errors = True
 
 class ItemQueryArgsSchema(Schema):
-    name = ma.fields.Str()
-    product_id = ma.fields.Int()
-    ingredient_id = ma.fields.Int()
+    names = ma.fields.List(ma.fields.Str(validate=ma.validate.Length(min=1)))
+    product_ids = ma.fields.List(ma.fields.Int(strict=True, validate=ma.validate.Range(min=1)))
+    ingredient_ids = ma.fields.List(ma.fields.Int(strict=True, validate=ma.validate.Range(min=1)))
