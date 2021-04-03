@@ -4,10 +4,30 @@ import dateutil.parser
 
 class TestRecipes:
     def test_get_empty(self, app):
-        pass
+        client = app.test_client()
+
+        response = client.get('/recipes/')
+        assert response.status_code == 200
+        assert response.json == []
 
     def test_get_nonempty(self, app):
-        pass
+        client = app.test_client()
+
+        recipe = {
+            'name':'Black Bean Pineapple Salsa',
+            'notes':'Goes well with jerk chicken and rice',
+            'rating':10,
+            'steps':'put all ingredients in the bowl and stir',
+        }
+
+        response = client.post('/recipes/', 
+            headers = {"Content-Type": "application/json"},
+            data = json.dumps(recipe),
+        )
+
+        response = client.get('/recipes/')
+        assert response.status_code == 200
+        assert len(response.json) == 1
 
     def test_get_item(self, app):
         pass

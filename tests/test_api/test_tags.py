@@ -4,13 +4,47 @@ import dateutil.parser
 
 class TestTags:
     def test_get_empty(self, app):
-        pass
+        client = app.test_client()
+
+        response = client.get('/tags/')
+        assert response.status_code == 200
+        assert len(response.json) == 0
 
     def test_get_nonempty(self, app):
-        pass
+        client = app.test_client()
+
+        tag = {
+            'name':'greek',
+        }
+
+        response = client.post('/tags/', 
+            headers = {"Content-Type": "application/json"},
+            data = json.dumps(tag),
+        )
+
+        response = client.get('/tags/')
+        assert response.status_code == 200
+        assert len(response.json) == 1
 
     def test_get_item(self, app):
-        pass
+        client = app.test_client()
+
+        tag = {
+            'name':'chicken',
+        }
+
+        response = client.post('/tags/', 
+            headers = {"Content-Type": "application/json"},
+            data = json.dumps(tag),
+        )
+
+        id = response.json['id']
+
+        response = client.get(f'/tags/{id}')
+
+        assert response.status_code == 200
+        assert response.json['id'] == 1
+        assert response.json['name'] == tag['name']
 
     def test_get_invalid(self, app):
         pass
