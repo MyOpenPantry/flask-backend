@@ -3,7 +3,7 @@ from flask_smorest import abort
 
 from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
-from myopenpantry.models import Recipe, Ingredient
+from myopenpantry.models import Recipe, Ingredient, Item
 
 from .schemas import IngredientSchema, IngredientQueryArgsSchema
 from ..items.schemas import ItemSchema
@@ -104,6 +104,45 @@ class IngredientRecipes(MethodView):
         """Get recipes associated with the ingredient"""
         return Ingredient.query.get_or_404(ingredient_id).recipes
 
+@blp.route('/<int:ingredient_id>/recipes/<int:recipe_id>')
+class IngredientRecipesOps(MethodView):
+
+    @blp.etag
+    @blp.response(204)
+    def put(self, ingredient_id, recipe_id):
+        """Add association between a recipe and ingredient"""
+        ingredient = Ingredient.get_or_404(ingredient_id)
+        recipe = Recipe.query.get_or_404(recipe_id)
+
+        blp.check_etag(ingredient, IngredientSchema)
+
+        ingredient.recipes.add(recipe)
+
+        try:
+            db.session.add(ingredient)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            abort(422)
+
+    @blp.etag
+    @blp.response(204)
+    def delete(self, ingredient_id, recipe_id):
+        """Delete association between a recipe and ingredient"""
+        ingredient = Ingredient.query.get_or_404(ingredient_id)
+        recipe = ingredient.recipes.query.get_or_404(recipe_id)
+
+        blp.check_etag(ingredient, IngredientSchema)
+
+        ingredient.recipes.remove(recipe)
+
+        try:
+            db.session.add(ingredient)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            abort(422)
+
 @blp.route('/<int:ingredient_id>/items')
 class IngredientItems(MethodView):
 
@@ -112,3 +151,42 @@ class IngredientItems(MethodView):
     def get(self, ingredient_id):
         """Get items associated with the ingredient"""
         return Ingredient.query.get_or_404(ingredient_id).items
+
+@blp.route('/<int:ingredient_id>/items/<int:item_id>')
+class IngredientItemsOps(MethodView):
+
+    @blp.etag
+    @blp.response(204)
+    def put(self, ingredient_id, item_id):
+        """Add association between a recipe and ingredient"""
+        ingredient = Ingredient.query.get_or_404(ingredient_id)
+        item = Item.query.get_or_404(item_id)
+
+        blp.check_etag(ingredient, IngredientSchema)
+
+        ingredient.recipes.add(item)
+
+        try:
+            db.session.add(ingredient)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            abort(422)
+
+    @blp.etag
+    @blp.response(204)
+    def delete(self, ingredient_id, item_id):
+        """Delete association between a recipe and ingredient"""
+        ingredient = Ingredient.query.get_or_404(ingredient_id)
+        item = ingredient.items.query.get_or_404(item_id)
+
+        blp.check_etag(ingredient, IngredientSchema)
+
+        ingredient.recipes.remove(item)
+
+        try:
+            db.session.add(ingredient)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            abort(422)

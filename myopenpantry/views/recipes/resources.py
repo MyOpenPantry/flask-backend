@@ -1,4 +1,5 @@
 from flask.views import MethodView
+from flask_smorest import abort
 
 from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
@@ -108,7 +109,26 @@ class RecipeTags(MethodView):
         return Recipe.query.get_or_404(recipe_id).tags
 
 @blp.route('/<int:recipe_id>/tags/<int:tag_id>')
-class RecipeTagsDelete(MethodView):
+class RecipeTagsOps(MethodView):
+
+    @blp.etag
+    @blp.response(204)
+    def put(self, recipe_id, tag_id):
+        """Add association between a recipe and tag"""
+        recipe = Recipe.query.get_or_404(recipe_id)
+        tag = Tag.query.get_or_404(tag_id)
+
+        blp.check_etag(recipe, RecipeSchema)
+
+        recipe.tags.add(tag)
+
+        try:
+            db.session.add(recipe)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            abort(422)
+
 
     @blp.etag
     @blp.response(204)
@@ -139,7 +159,25 @@ class RecipeIngredients(MethodView):
         return Recipe.query.get_or_404(recipe_id).ingredients
 
 @blp.route('/<int:recipe_id>/tags/<int:ingredient_id>')
-class RecipeIngredientsDelete(MethodView):
+class RecipeIngredientsOps(MethodView):
+
+    @blp.etag
+    @blp.response(204)
+    def put(self, recipe_id, ingredient_id):
+        """Add association between a recipe and ingredient"""
+        recipe = Recipe.query.get_or_404(recipe_id)
+        ingredient = Ingredient.query.get_or_404(ingredient_id)
+
+        blp.check_etag(recipe, RecipeSchema)
+
+        recipe.ingredients.add(ingredient)
+
+        try:
+            db.session.add(recipe)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            abort(422)
 
     @blp.etag
     @blp.response(204)

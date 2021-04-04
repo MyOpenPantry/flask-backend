@@ -1,4 +1,5 @@
 from flask.views import MethodView
+from flask_smorest import abort
 
 from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
@@ -79,7 +80,7 @@ class TagsbyID(MethodView):
 
     @blp.etag
     @blp.response(204)
-    def delete(self, recipe_id):
+    def delete(self, tag_id):
         """Delete a tag"""
         tag = Tag.query.get_or_404(tag_id)
 
@@ -98,7 +99,25 @@ class TagRecipes(MethodView):
         return Tags.query.get_or_404(tag_id).recipes
 
 @blp.route('/<int:tag_id>/recipes/<int:recipe_id>')
-class TagRecipesDelete(MethodView):
+class TagRecipesOps(MethodView):
+
+    @blp.etag
+    @blp.response(204)
+    def put(self, tag_id, recipe_id):
+        """Add association between a tag and recipe"""
+        tag = Tag.query.get_or_404(tag_id)
+        recipe = Recipe.query.get_or_404(recipe_id)
+
+        blp.check_etag(tag, TagSchema)
+
+        tag.recipes.add(recipe)
+
+        try:
+            db.session.add(tag)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            abort(422)
 
     @blp.etag
     @blp.response(204)
