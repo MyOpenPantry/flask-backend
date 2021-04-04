@@ -3,9 +3,9 @@ from flask_smorest import abort
 
 from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
-from myopenpantry.models import Tag
+from myopenpantry.models import Tag, Recipe
 
-from .schemas import TagSchema, TagQueryArgsSchema
+from .schemas import TagSchema, TagQueryArgsSchema, TagRecipeSchema
 from ..recipes.schemas import RecipeSchema
 
 blp = Blueprint(
@@ -96,21 +96,21 @@ class TagRecipes(MethodView):
     @blp.response(200, RecipeSchema(many=True))
     def get(self, tag_id):
         """Get recipes associated with a tag"""
-        return Tags.query.get_or_404(tag_id).recipes
+        return Tag.query.get_or_404(tag_id).recipes
 
-@blp.route('/<int:tag_id>/recipes/<int:recipe_id>')
-class TagRecipesOps(MethodView):
-
-    @blp.etag
+    #@blp.etag
+    @blp.arguments(TagQueryArgsSchema)
     @blp.response(204)
-    def put(self, tag_id, recipe_id):
+    def post(self, args, tag_id):
         """Add association between a tag and recipe"""
         tag = Tag.query.get_or_404(tag_id)
-        recipe = Recipe.query.get_or_404(recipe_id)
 
-        blp.check_etag(tag, TagSchema)
+        #blp.check_etag(tag, TagSchema)
 
-        tag.recipes.add(recipe)
+        recipe_ids = args.pop('recipe_ids', None)
+        for recipe_id in recipe_ids:
+            recipe = Recipe.query.get_or_404(recipe_id)
+            tag.recipes.append(recipe)
 
         try:
             db.session.add(tag)
@@ -118,6 +118,9 @@ class TagRecipesOps(MethodView):
         except:
             db.session.rollback()
             abort(422)
+
+@blp.route('/<int:tag_id>/recipes/<int:recipe_id>')
+class TagRecipesDelete(MethodView):
 
     @blp.etag
     @blp.response(204)

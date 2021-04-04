@@ -174,7 +174,7 @@ class TestTags:
     def test_query(self, app):
         client = app.test_client()
 
-        recipe_ids = {}
+        recipe_ids = dict()
 
         recipes = [
             {
@@ -215,7 +215,7 @@ class TestTags:
         for recipe in recipes:
             response = client.post('/recipes/', 
                 headers = {"Content-Type": "application/json"},
-                data = json.dumps(recipe),
+                json = recipe,
             )
 
             assert response.status_code == 201
@@ -224,7 +224,7 @@ class TestTags:
 
         tags = [
             {
-                'name':'texmex'
+                'name':'creole'
             },
             {
                 'name':'vegetarian'
@@ -237,22 +237,44 @@ class TestTags:
             },
         ]
 
-        tag_ids = {}
+        tag_info = dict()
 
         for tag in tags:
-            response = client.post('/recipes/', 
+            response = client.post('/tags/', 
                 headers = {"Content-Type": "application/json"},
-                data = json.dumps(recipe),
+                json = tag,
             )
 
             assert response.status_code == 201
+            tag_info[response.json['name']] = (response.json['id'], response.headers['ETag'])
 
-            tag_ids[response.json['name']] = response.json['id']
+        # TODO this can be done "better", but its late and I just ultimately want to test the endpoint
+        associations = [
+            ['Black Bean Pineapple Salsa','vegetarian'],
+            ['Cauliflower Taco','vegetarian'],
+            ['Fruit Salad','vegetarian'],
+            ['Chicken Salad','meat'],
+            ['Beef Stew','meat'],
+            ['Red Beans and Rice','creole'],
+            ['Fruit Salad','side'],
+            ['Fruit Salad','side'],
+            ['Black Bean Pineapple Salsa','side'],
+            ['Chicken Salad','side'],
+        ]
 
+        for r_name, t_name in associations:
+            t_id, t_etag = tag_info[t_name]
 
-        
+            r_ids = {'recipe_ids': [recipe_ids[r_name]]}
 
+            response = client.post(f'/tags/{t_id}/recipes', 
+                headers = {"Content-Type":"application/json"},
+                json = r_ids
+            )
 
+            assert response.status_code == 204
+
+        # TODO start queries here
 
     def test_delete(self, app):
         client = app.test_client()
