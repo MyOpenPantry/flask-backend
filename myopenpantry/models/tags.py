@@ -7,6 +7,6 @@ class Tag(db.Model):
     __tablename__ = "tags"
 
     id = db.Column(sa.Integer, primary_key=True)
-    name = db.Column(sa.Text)
+    name = db.Column(sa.Text, unique=True, nullable=False)
 
     recipes = db.relationship('Recipe', secondary='recipe_tags', back_populates="tags")
