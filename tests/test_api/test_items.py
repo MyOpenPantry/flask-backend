@@ -20,7 +20,7 @@ class TestItems:
 
         response = client.post('/items/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_item),
+            json = new_item,
         )
 
         response = client.get('/items/')
@@ -37,7 +37,7 @@ class TestItems:
 
         response = client.post('/items/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_item),
+            json = new_item,
         )
 
         assert response.status_code == 201
@@ -60,7 +60,7 @@ class TestItems:
 
         response = client.post('/items/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_item),
+            json = new_item,
         )
 
         assert response.status_code == 201
@@ -82,7 +82,7 @@ class TestItems:
 
         response = client.post('/items/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_item),
+            json = new_item,
         )
 
         assert response.status_code == 201
@@ -106,7 +106,7 @@ class TestItems:
 
         response = client.post('/items/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_item),
+            json = new_item,
         )
 
         assert response.status_code == 422
@@ -121,7 +121,7 @@ class TestItems:
 
         response = client.post('/items/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_item),
+            json = new_item,
         )
 
         assert response.status_code == 422
@@ -137,14 +137,14 @@ class TestItems:
 
         response = client.post('/items/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_item),
+            json = new_item,
         )
 
         assert response.status_code == 201
 
         response = client.post('/items/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_item),
+            json = new_item,
         )
 
         assert response.status_code == 422
@@ -160,7 +160,7 @@ class TestItems:
 
         response = client.post('/items/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_item),
+            json = new_item,
         )
 
         assert response.status_code == 201
@@ -197,7 +197,7 @@ class TestItems:
 
         response = client.post('/items/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_item),
+            json = new_item,
         )
 
         assert response.status_code == 201
@@ -262,7 +262,7 @@ class TestItems:
         for ingredient in new_ingredients:
             response = client.post('/ingredients/', 
                 headers = {"Content-Type": "application/json"},
-                data = json.dumps(ingredient),
+                json = ingredient,
             )
             assert response.status_code == 201
 
@@ -305,7 +305,7 @@ class TestItems:
         for item in new_items:
             response = client.post('/items/', 
                 headers = {"Content-Type": "application/json"},
-                data = json.dumps(item),
+                json = item,
             )
             assert response.status_code == 201
 
@@ -393,7 +393,7 @@ class TestItems:
 
         response = client.post('/items/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_item),
+            json = new_item,
         )
 
         assert response.status_code == 201
@@ -419,7 +419,7 @@ class TestItems:
 
         response = client.post('/items/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_item),
+            json = new_item,
         )
 
         assert response.status_code == 201

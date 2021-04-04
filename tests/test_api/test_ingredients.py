@@ -34,7 +34,7 @@ class TestIngredients:
         for ingredient in ingredients:
             response = client.post('/ingredients/', 
                 headers = {"Content-Type": "application/json"},
-                data = json.dumps(ingredient),
+                json = ingredient,
             )
 
             assert response.status_code == 201
@@ -53,7 +53,7 @@ class TestIngredients:
 
         response = client.post('/items/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_ingredient),
+            json = new_ingredient,
         )
 
         assert response.status_code == 201
@@ -75,7 +75,7 @@ class TestIngredients:
 
         response = client.post('/ingredients/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_ingredient),
+            json = new_ingredient,
         )
 
         assert response.status_code == 201
@@ -95,7 +95,7 @@ class TestIngredients:
 
         response = client.post('/ingredients/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_ingredient),
+            json = new_ingredient,
         )
 
         assert response.status_code == 201
@@ -116,7 +116,7 @@ class TestIngredients:
 
         response = client.post('/ingredients/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_ingredient),
+            json = new_ingredient,
         )
 
         assert response.status_code == 422
@@ -133,7 +133,7 @@ class TestIngredients:
 
         response = client.post('/ingredients/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_ingredient),
+            json = new_ingredient,
         )
 
         assert response.status_code == 201
@@ -164,7 +164,7 @@ class TestIngredients:
 
         response = client.post('/ingredients/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_ingredient),
+            json = new_ingredient,
         )
 
         assert response.status_code == 201
@@ -193,7 +193,7 @@ class TestIngredients:
 
         response = client.post('/ingredients/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_ingredient),
+            json = new_ingredient,
         )
 
         assert response.status_code == 201
@@ -216,7 +216,7 @@ class TestIngredients:
 
         response = client.post('/ingredients/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(new_ingredient),
+            json = new_ingredient,
         )
 
         assert response.status_code == 201

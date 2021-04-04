@@ -22,7 +22,7 @@ class TestRecipes:
 
         response = client.post('/recipes/', 
             headers = {"Content-Type": "application/json"},
-            data = json.dumps(recipe),
+            json = recipe,
         )
 
         response = client.get('/recipes/')
@@ -30,7 +30,23 @@ class TestRecipes:
         assert len(response.json) == 1
 
     def test_get_item(self, app):
-        pass
+        client = app.test_client()
+
+        recipe = {
+            'name':'Jerk Chicken',
+            'notes':'alwyas use the grill',
+            'rating':9,
+            'steps':'1 2 3 4',
+        }
+
+        response = client.post('/recipes/', 
+            headers = {"Content-Type": "application/json"},
+            json = recipe,
+        )
+
+        response = client.get('/recipes/')
+        assert response.status_code == 200
+        assert len(response.json) == 1
 
     def test_get_invalid(self, app):
         pass
