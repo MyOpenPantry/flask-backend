@@ -1,6 +1,8 @@
 from flask.views import MethodView
 from flask_smorest import abort
 
+from sqlalchemy import or_
+
 from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
 from myopenpantry.models import Tag, Recipe
@@ -24,12 +26,12 @@ class Tags(MethodView):
     @blp.paginate(SQLCursorPage)
     def get(self, args):
         """List tags"""
-        recipe_ids = args.pop('recipe_id', None)
+        names = args.pop('names', None)
 
         ret = Tag.query.filter_by(**args)
 
-        if recipe_ids is not None:
-            ret = ret.filter(Tag.recipes.id in recipe_ids)
+        if names is not None:
+            ret = ret.filter(or_(Tag.name.like(f"%{name}%") for name in names))
 
         return ret
 
@@ -98,14 +100,12 @@ class TagRecipes(MethodView):
         """Get recipes associated with a tag"""
         return Tag.query.get_or_404(tag_id).recipes
 
-    #@blp.etag
+    @blp.etag
     @blp.arguments(TagQueryArgsSchema)
     @blp.response(204)
     def post(self, args, tag_id):
         """Add association between a tag and recipe"""
         tag = Tag.query.get_or_404(tag_id)
-
-        #blp.check_etag(tag, TagSchema)
 
         recipe_ids = args.pop('recipe_ids', None)
         for recipe_id in recipe_ids:

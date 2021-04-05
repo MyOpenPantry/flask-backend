@@ -256,7 +256,8 @@ class TestTags:
             ['Chicken Salad','meat'],
             ['Beef Stew','meat'],
             ['Red Beans and Rice','creole'],
-            ['Fruit Salad','side'],
+            ['Red Beans and Rice','meat'],
+            ['Red Beans and Rice','vegetarian'],
             ['Fruit Salad','side'],
             ['Black Bean Pineapple Salsa','side'],
             ['Chicken Salad','side'],
@@ -274,7 +275,30 @@ class TestTags:
 
             assert response.status_code == 204
 
-        # TODO start queries here
+        # tag name
+        query = {'names':['side', 'vegetarian']}
+        response = client.get('tags/',
+            headers = {'Content-Type':'application/json'},
+            json = query
+        )
+
+        assert len(response.json) == 2
+
+        query = {'names':[]}
+        response = client.get('tags/',
+            headers = {'Content-Type':'application/json'},
+            json = query
+        )
+
+        assert len(response.json) == len(tags)
+
+        query = {'names':['meat']}
+        response = client.get('tags/',
+            headers = {'Content-Type':'application/json'},
+            json = query
+        )
+
+        assert len(response.json) == 1
 
     def test_delete(self, app):
         client = app.test_client()

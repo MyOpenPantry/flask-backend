@@ -29,7 +29,7 @@ class TestRecipes:
         assert response.status_code == 200
         assert len(response.json) == 1
 
-    def test_get_item(self, app):
+    def test_get(self, app):
         client = app.test_client()
 
         recipe = {

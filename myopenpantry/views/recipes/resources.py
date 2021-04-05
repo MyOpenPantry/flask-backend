@@ -7,7 +7,7 @@ from myopenpantry.models import Recipe
 
 from sqlalchemy import or_
 
-from .schemas import RecipeSchema, RecipeQueryArgsSchema
+from .schemas import RecipeSchema, RecipeQueryArgsSchema, RecipeTagSchema, RecipeIngredientSchema
 from ..tags.schemas import TagSchema
 from ..ingredients.schemas import IngredientSchema
 
@@ -108,19 +108,19 @@ class RecipeTags(MethodView):
         """Get tags associated with a recipe"""
         return Recipe.query.get_or_404(recipe_id).tags
 
-@blp.route('/<int:recipe_id>/tags/<int:tag_id>')
-class RecipeTagsOps(MethodView):
-
     @blp.etag
+    @blp.arguments(RecipeTagSchema)
     @blp.response(204)
-    def put(self, recipe_id, tag_id):
+    def post(self, recipe_id):
         """Add association between a recipe and tag"""
         recipe = Recipe.query.get_or_404(recipe_id)
-        tag = Tag.query.get_or_404(tag_id)
-
         blp.check_etag(recipe, RecipeSchema)
 
-        recipe.tags.add(tag)
+        # tag_ids are required by the schema, so shouldn't need to check for if they are none
+        tag_ids = args.pop('tag_ids', None)
+        for tag_id in tag_ids:
+            tag = Tag.query.get_or_404(tag_id)
+            recipe.tags.add(tag)
 
         try:
             db.session.add(recipe)
@@ -129,6 +129,8 @@ class RecipeTagsOps(MethodView):
             db.session.rollback()
             abort(422)
 
+@blp.route('/<int:recipe_id>/tags/<int:tag_id>')
+class RecipeTagsDelete(MethodView):
 
     @blp.etag
     @blp.response(204)
@@ -158,19 +160,19 @@ class RecipeIngredients(MethodView):
         """Get ingredients associated with a recipe"""
         return Recipe.query.get_or_404(recipe_id).ingredients
 
-@blp.route('/<int:recipe_id>/tags/<int:ingredient_id>')
-class RecipeIngredientsOps(MethodView):
-
     @blp.etag
+    @blp.arguments(RecipeIngredientSchema)
     @blp.response(204)
-    def put(self, recipe_id, ingredient_id):
+    def post(self, recipe_id, ingredient_id):
         """Add association between a recipe and ingredient"""
         recipe = Recipe.query.get_or_404(recipe_id)
-        ingredient = Ingredient.query.get_or_404(ingredient_id)
-
         blp.check_etag(recipe, RecipeSchema)
 
-        recipe.ingredients.add(ingredient)
+        # tag_ids are required by the schema, so shouldn't need to check for if they are none
+        ingredient_ids = args.pop('ingredient_ids', None)
+        for ingredient_id in ingredient_ids:
+            ingredient = Ingredient.query.get_or_404(ingredient_id)
+            recipe.ingredientss.add(ingredient)
 
         try:
             db.session.add(recipe)
@@ -178,6 +180,10 @@ class RecipeIngredientsOps(MethodView):
         except:
             db.session.rollback()
             abort(422)
+
+
+@blp.route('/<int:recipe_id>/tags/<int:ingredient_id>')
+class RecipeIngredientsDelete(MethodView):
 
     @blp.etag
     @blp.response(204)
