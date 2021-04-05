@@ -246,7 +246,66 @@ class TestRecipes:
         pass
 
     def test_delete(self, app):
-        pass
+        client = app.test_client()
+
+        recipe = {
+            'name':'Roasted Brussel Sprouts',
+            'notes':'add whatever spices you want',
+            'rating':99999,
+            'steps':'hello',
+        }
+
+        response = client.post('/recipes/', 
+            headers = {"Content-Type": "application/json"},
+            json = recipe,
+        )
+
+        assert response.status_code == 201
+        
+        id = response.json['id']
+        etag = response.headers['ETag']
+
+        response = client.delete(f'/recipes/{id}',
+            headers = {'If-Match': etag}
+        )
+
+        assert response.status_code == 204
 
     def test_delete_invalid(self, app):
-        pass
+        client = app.test_client()
+
+        recipe = {
+            'name':'Roasted Brussel Sprouts',
+            'notes':'add whatever spices you want',
+            'rating':99999,
+            'steps':'hello',
+        }
+
+        response = client.post('/recipes/', 
+            headers = {"Content-Type": "application/json"},
+            json = recipe,
+        )
+
+        assert response.status_code == 201
+        
+        id = response.json['id']
+        etag = response.headers['ETag']
+
+        # no etag
+        response = client.delete(f'/recipes/{id}',
+            headers = {'If-Match': ''}
+        )
+
+        assert response.status_code == 428
+
+        response = client.delete(f'/recipes/{id}',
+            headers = {'If-Match': etag}
+        )
+
+        assert response.status_code == 204
+
+        response = client.delete(f'/recipes/{id}',
+            headers = {'If-Match': etag}
+        )
+
+        assert response.status_code == 404

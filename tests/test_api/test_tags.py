@@ -349,6 +349,13 @@ class TestTags:
         etag = response.headers['ETag']
         id = response.json['id']
 
+        # no etag
+        response = client.delete(f'/tags/{id}', 
+            headers = {"If-Match": ''},
+        )
+
+        assert response.status_code == 428
+
         response = client.delete(f'/tags/{id}', 
             headers = {"If-Match": etag},
         )
