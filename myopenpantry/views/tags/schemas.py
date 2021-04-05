@@ -6,6 +6,7 @@ from myopenpantry.models.tags import Tag
 
 class TagSchema(AutoSchema):
     id = field_for(Tag, "id", dump_only=True)
+    name = field_for(Tag, 'name', validate=ma.validate.Length(min=1))
 
     class Meta(AutoSchema.Meta):
         table = Tag.__table__

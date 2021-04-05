@@ -127,13 +127,120 @@ class TestRecipes:
             assert response.status_code == 422
 
     def test_post_existing(self, app):
-        pass
+        client = app.test_client()
+
+        recipe = {
+            'name':'Baked Sweet Potato',
+            'notes':'jerk seasoning works well with this',
+            'rating':10,
+            'steps':'test',
+        }
+
+        response = client.post('/recipes/', 
+            headers = {"Content-Type": "application/json"},
+            json = recipe,
+        )
+
+        assert response.status_code == 201
+
+        response = client.post('/recipes/', 
+            headers = {"Content-Type": "application/json"},
+            json = recipe,
+        )
+
+        assert response.status_code == 422
 
     def test_put(self, app):
-        pass
+        client = app.test_client()
+
+        recipe = {
+            'name':'Cheescak',
+            'steps':'steps here',
+        }
+
+        response = client.post('/recipes/', 
+            headers = {"Content-Type": "application/json"},
+            json = recipe,
+        )
+
+        assert response.status_code == 201
+
+        id = response.json['id']
+        etag = response.headers['ETag']
+
+        recipe['name'] = 'Cheesecake'
+        response = client.put(f'/recipes/{id}', 
+            headers = {"If-Match": etag},
+            json = recipe,
+        )
+
+        assert response.status_code == 200
 
     def test_invalid_put(self, app):
-        pass
+        client = app.test_client()
+
+        recipe = {
+            'name':'Marinara',
+            'notes':'italian sauce',
+            'rating':1,
+            'steps':'steps',
+        }
+
+        response = client.post('/recipes/', 
+            headers = {"Content-Type": "application/json"},
+            json = recipe,
+        )
+
+        assert response.status_code == 201
+
+        id = response.json['id']
+        etag = response.headers['ETag']
+
+        # no etag
+        response = client.put(f'/recipes/{id}', 
+            headers = {"If-Match": ''},
+            json = recipe,
+        )
+
+        assert response.status_code == 428
+
+        # no recipe name
+        del recipe['name']
+        response = client.put(f'/recipes/{id}', 
+            headers = {"If-Match": etag},
+            json = recipe,
+        )
+
+        assert response.status_code == 422
+
+        # no recipe steps
+        recipe['name'] = 'Marinara'
+        del recipe['steps']
+        response = client.put(f'/recipes/{id}', 
+            headers = {"If-Match": etag},
+            json = recipe,
+        )
+
+        assert response.status_code == 422
+
+        # invalid rating #1
+        recipe['steps'] = 'test'
+        recipe['rating'] = -1
+        response = client.put(f'/recipes/{id}', 
+            headers = {"If-Match": etag},
+            json = recipe,
+        )
+
+        assert response.status_code == 422
+
+        # invalid rating #2
+        recipe['rating'] = 'not an int'
+        response = client.put(f'/recipes/{id}', 
+            headers = {"If-Match": etag},
+            json = recipe,
+        )
+
+        assert response.status_code == 422
 
     def test_query(self, app):
         pass

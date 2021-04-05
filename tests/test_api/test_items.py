@@ -206,7 +206,15 @@ class TestItems:
         updated = response.json['updated_at']
         etag = response.headers['ETag']
 
-        # updated is read only
+        # no etag
+        response = client.put(f'/items/{id}',
+            headers = {"If-Match": ''},
+            json = new_item
+        )
+
+        assert response.status_code == 428
+
+        # changing read-only field updated
         update_item = {
             'name':'Grape Jelly',
             'amount':44,

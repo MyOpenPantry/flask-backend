@@ -8,6 +8,7 @@ class RecipeSchema(AutoSchema):
     id = field_for(Recipe, "id", dump_only=True)
     created_at = field_for(Recipe, "created_at", dump_only=True)
     updated_at = field_for(Recipe, "updated_at", dump_only=True)
+    rating = field_for(Recipe, 'rating', validate=ma.validate.Range(min=0))
 
     class Meta(AutoSchema.Meta):
         table = Recipe.__table__

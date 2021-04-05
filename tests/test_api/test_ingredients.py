@@ -172,6 +172,14 @@ class TestIngredients:
         id = response.json['id']
         etag = response.headers['ETag']
 
+        # no etag
+        response = client.put(f'/ingredients/{id}',
+            headers = {"If-Match": ''},
+            json = new_ingredient
+        )
+
+        assert response.status_code == 428
+
         # missing required 'name'
         update_item = {}
         response = client.put(f'/ingredients/{id}',

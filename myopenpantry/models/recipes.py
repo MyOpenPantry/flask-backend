@@ -8,7 +8,7 @@ class Recipe(db.Model):
     __tablename__ = "recipes"
 
     id = db.Column(sa.Integer, primary_key=True)
-    name = db.Column(sa.Text, nullable=False)
+    name = db.Column(sa.Text, nullable=False, unique=True)
     steps = db.Column(sa.Text, nullable=False)
     notes = db.Column(sa.Text)
     rating = db.Column(sa.Integer)

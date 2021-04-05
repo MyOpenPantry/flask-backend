@@ -162,8 +162,16 @@ class TestTags:
         etag = response.headers['ETag']
         id = response.json['id']
 
-        del tag['name']
+        # no etag
+        response = client.put(f'/tags/{id}', 
+            headers = {"If-Match": ''},
+            json = tag,
+        )
 
+        assert response.status_code == 428
+
+        # no name
+        del tag['name']
         response = client.put(f'/tags/{id}', 
             headers = {"If-Match": etag},
             json = tag,
