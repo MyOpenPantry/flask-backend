@@ -34,7 +34,7 @@ class TestRecipes:
 
         recipe = {
             'name':'Jerk Chicken',
-            'notes':'alwyas use the grill',
+            'notes':'always use the grill',
             'rating':9,
             'steps':'1 2 3 4',
         }
@@ -49,13 +49,82 @@ class TestRecipes:
         assert len(response.json) == 1
 
     def test_get_invalid(self, app):
-        pass
+        client = app.test_client()
+
+        recipe = {
+            'name':'Lasagna Salad',
+            'notes':'',
+            'rating':7,
+            'steps':'the lazy brown fox jumped over the quick dog',
+        }
+
+        response = client.post('/recipes/', 
+            headers = {"Content-Type": "application/json"},
+            json = recipe,
+        )
+
+        id = response.json['id']
+
+        response = client.get(f'/recipes/{id+1}')
+
+        assert response.status_code == 404
 
     def test_post(self, app):
-        pass
+        client = app.test_client()
+
+        recipe = {
+            'name':'Roasted Broccoli',
+            'notes':'add whatever spices you want',
+            'rating':999,
+            'steps':'Preheat oven to 400. Coat broccoli florets in garlic, salt, and pepper. Put broccoli in single layer on baking tray in oven for 20 minutes, stir, and leave in for 10 more minutes',
+        }
+
+        response = client.post('/recipes/', 
+            headers = {"Content-Type": "application/json"},
+            json = recipe,
+        )
+
+        assert response.status_code == 201
+        
+        for k in recipe.keys():
+            assert response.json[k] == recipe[k]
 
     def test_post_invalid(self, app):
-        pass
+        client = app.test_client()
+
+        invalid_recipes = [
+            # no name
+            {
+                'notes':'add whatever spices you want',
+                'rating':999,
+                'steps':'Preheat oven to 400. Coat broccoli florets in garlic, salt, and pepper. Put broccoli in single layer on baking tray in oven for 20 minutes, stir, and leave in for 10 more minutes',
+            },
+            # non-int rating
+            {
+            'name':'Roasted Broccoli',
+            'notes':'add whatever spices you want',
+            'rating':'asdf',
+            'steps':'Preheat oven to 400. Coat broccoli florets in garlic, salt, and pepper. Put broccoli in single layer on baking tray in oven for 20 minutes, stir, and leave in for 10 more minutes',
+            },
+            # no steps
+            {
+                'name':'Roasted Broccoli',
+                'notes':'add whatever spices you want',
+                'rating':999,
+            },
+            # empty
+            {
+
+            }
+        ]
+
+        for recipe in invalid_recipes:
+            response = client.post('/recipes/', 
+                headers = {"Content-Type": "application/json"},
+                json = recipe,
+            )
+
+            assert response.status_code == 422
 
     def test_post_existing(self, app):
         pass
