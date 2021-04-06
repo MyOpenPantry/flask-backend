@@ -141,8 +141,7 @@ class RecipeTagsDelete(MethodView):
     def delete(self, recipe_id, tag_id):
         """Delete association between a recipe and tag"""
         recipe = Recipe.query.get_or_404(recipe_id)
-        #tag = Tag.query.get_or_404(tag_id)
-        tag = Tag.query.join(Tag, Recipe.tags).filter(Tag.id == tag_id).first()
+        tag = recipe.tags.filter(Tag.id == tag_id).first()
 
         if tag is None:
             abort(404)
@@ -195,7 +194,8 @@ class RecipeIngredientsDelete(MethodView):
     def delete(self, recipe_id, ingredient_id):
         """Delete association between a recipe and ingredient"""
         recipe = Recipe.query.get_or_404(recipe_id)
-        ingredient = ingredient.query.join(ingredient, Recipe.ingredients).filter(ingredient.id == ingredient_id).first()
+        #ingredient = Tag.query.join(Tag, Recipe.tags).filter(Tag.id == tag_id).first()
+        ingredient = recipe.ingredients.filter(ingredient.id == ingredient_id).first()
 
         if ingredient is None:
             abort(422)

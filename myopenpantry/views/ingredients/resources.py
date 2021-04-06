@@ -124,8 +124,6 @@ class IngredientRecipes(MethodView):
         recipe_id = args.pop('recipe_id', None)
         recipe = Recipe.query.get_or_404(recipe_id)
 
-        blp.check_etag(ingredient, IngredientSchema)
-
         ingredient.recipes.add(recipe)
 
         try:
@@ -144,7 +142,10 @@ class IngredientRecipesDelete(MethodView):
     def delete(self, ingredient_id, recipe_id):
         """Delete association between a recipe and ingredient"""
         ingredient = Ingredient.query.get_or_404(ingredient_id)
-        recipe = ingredient.recipes.query.get_or_404(recipe_id)
+        recipe = ingredient.recipes.filter(Recipe.id == recipe_id).first()
+
+        if recipe is None:
+            abort(404)
 
         blp.check_etag(ingredient, IngredientSchema)
 
@@ -176,8 +177,6 @@ class IngredientItems(MethodView):
         item_id = args.pop('item_id', None)
         item = Item.query.get_or_404(item_id)
 
-        blp.check_etag(ingredient, IngredientSchema)
-
         ingredient.recipes.add(item)
 
         try:
@@ -196,7 +195,10 @@ class IngredientItemsDelete(MethodView):
     def delete(self, ingredient_id, item_id):
         """Delete association between a recipe and ingredient"""
         ingredient = Ingredient.query.get_or_404(ingredient_id)
-        item = ingredient.items.query.get_or_404(item_id)
+        item = ingredient.items.filter(Item.id == item_id).first()
+
+        if item is None:
+            abort(404)
 
         blp.check_etag(ingredient, IngredientSchema)
 
