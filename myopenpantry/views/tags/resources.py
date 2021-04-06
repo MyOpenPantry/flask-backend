@@ -131,7 +131,7 @@ class TagRecipesDelete(MethodView):
     def delete(self, tag_id, recipe_id):
         """Delete association between a tag and recipe"""
         tag = Tag.query.get_or_404(tag_id)
-        recipe = tag.recipes.filter(Recipe.id == recipe_id).first()
+        recipe = Recipe.query.with_parent(tag).filter(Recipe.id == recipe_id).first()
 
         if recipe is None:
             abort(422)

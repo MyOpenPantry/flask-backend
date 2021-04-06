@@ -16,7 +16,7 @@ class Recipe(db.Model):
     updated_at = db.Column(sa.DateTime, default=datetime.now, onupdate=datetime.now)
 
     # many to many
-    ingredients = db.relationship("RecipeIngredients", back_populates="recipe", lazy='dynamic')
+    ingredients = db.relationship("RecipeIngredients", back_populates="recipe")
 
     # many to many to allow filtering recipes by tags such
-    tags = db.relationship('Tag', secondary='recipe_tags', back_populates="recipes", lazy='dynamic')
+    tags = db.relationship('Tag', secondary='recipe_tags', back_populates="recipes")

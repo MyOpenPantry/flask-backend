@@ -11,6 +11,6 @@ class Ingredient(db.Model):
     name = sa.Column(sa.String(128), nullable=False, unique=True)
 
     # many to one, with Ingredient being the one 
-    items = relationship('Item', back_populates="ingredient", lazy='dynamic')
+    items = relationship('Item', back_populates="ingredient")
     # many to many
-    recipes = relationship("RecipeIngredients", back_populates="ingredient", lazy='dynamic')
+    recipes = relationship("RecipeIngredients", back_populates="ingredient")
