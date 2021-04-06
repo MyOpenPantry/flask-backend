@@ -119,10 +119,11 @@ class RecipeTags(MethodView):
         """Add association between a recipe and tag"""
         recipe = Recipe.query.get_or_404(recipe_id)
 
-        # tag_ids are required by the schema, so shouldn't need to check for if they are none
+        # tag_ids are required by the schema, so shouldn't need to check if they are none
         tag_ids = args.pop('tag_ids', None)
         for tag_id in tag_ids:
             tag = Tag.query.get_or_404(tag_id)
+
             recipe.tags.append(tag)
 
         try:
@@ -140,15 +141,15 @@ class RecipeTagsDelete(MethodView):
     def delete(self, recipe_id, tag_id):
         """Delete association between a recipe and tag"""
         recipe = Recipe.query.get_or_404(recipe_id)
-        tag = Tag.query.get_or_404(tag_id)
+        #tag = Tag.query.get_or_404(tag_id)
+        tag = Tag.query.join(Tag, Recipe.tags).filter(Tag.id == tag_id).first()
 
-        if tag not in recipe.tags:
-            abort(422)
+        if tag is None:
+            abort(404)
 
         blp.check_etag(recipe, RecipeSchema)
 
-        if tag in recipe.tags:
-            recipe.tags.remove(tag)
+        recipe.tags.remove(tag)
 
         try:
             db.session.add(recipe)
@@ -156,7 +157,6 @@ class RecipeTagsDelete(MethodView):
         except:
             db.session.rollback()
             abort(422)
-
 
 @blp.route('/<int:recipe_id>/ingredients')
 class RecipeIngredients(MethodView):
@@ -173,8 +173,6 @@ class RecipeIngredients(MethodView):
     def post(self, args, recipe_id):
         """Add association between a recipe and ingredient"""
         recipe = Recipe.query.get_or_404(recipe_id)
-
-        blp.check_etag(recipe, RecipeSchema)
 
         # tag_ids are required by the schema, so shouldn't need to check for if they are none
         ingredient_ids = args.pop('ingredient_ids', None)
@@ -197,9 +195,9 @@ class RecipeIngredientsDelete(MethodView):
     def delete(self, recipe_id, ingredient_id):
         """Delete association between a recipe and ingredient"""
         recipe = Recipe.query.get_or_404(recipe_id)
-        ingredient = recipe.ingredients.get_or_404(ingredient_id)
+        ingredient = ingredient.query.join(ingredient, Recipe.ingredients).filter(ingredient.id == ingredient_id).first()
 
-        if ingredient not in recipe.ingredients:
+        if ingredient is None:
             abort(422)
 
         blp.check_etag(recipe, RecipeSchema)
