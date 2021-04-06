@@ -1,6 +1,4 @@
 import pytest, json
-from datetime import datetime
-import dateutil.parser
 
 class TestItemIngredients:
     def test_link_item_ingredient(self, app):
@@ -184,7 +182,71 @@ class TestItemIngredients:
         assert response.json == {}
 
     def test_get_ingredient_items(self, app):
-        pass
+        client = app.test_client()
+
+        new_ingredient = {
+            'name':'grape',
+        }
+
+        response = client.post('/ingredients/', 
+            headers = {"Content-Type": "application/json"},
+            json = new_ingredient,
+        )
+
+        assert response.status_code == 201
+
+        ingredient = response.json
+
+        new_item = {
+            'name':'Champagne Grapes',
+            'amount':567,
+            'ingredient_id': ingredient['id']
+        }
+
+        new_item2 = {
+            'name':'Red Grapes',
+            'amount':2,
+            'ingredient_id': ingredient['id']
+        }
+
+        response = client.post('/items/', 
+            headers = {"Content-Type": "application/json"},
+            json = new_item,
+        )
+
+        assert response.status_code == 201
+
+        item = response.json
+
+        response = client.post('/items/', 
+            headers = {"Content-Type": "application/json"},
+            json = new_item2,
+        )
+
+        assert response.status_code == 201
+
+        item2 = response.json
+
+        response = client.get(f'/ingredients/{ingredient["id"]}/items')
+
+        assert response.status_code == 200
+        assert response.json == [item, item2]
 
     def test_get_empty_ingredient_items(self, app):
-        pass
+        client = app.test_client()
+
+        new_ingredient = {
+            'name':'grape',
+        }
+
+        response = client.post('/ingredients/', 
+            headers = {"Content-Type": "application/json"},
+            json = new_ingredient,
+        )
+
+        assert response.status_code == 201
+
+        response = client.get(f'/ingredients/{response.json["id"]}/items')
+
+        assert response.status_code == 200
+        assert response.json == []

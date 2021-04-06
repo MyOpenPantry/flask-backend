@@ -33,7 +33,7 @@ class Tags(MethodView):
         if names is not None:
             ret = ret.filter(or_(Tag.name.like(f"%{name}%") for name in names))
 
-        return ret
+        return ret.order_by(Tag.id)
 
     @blp.etag
     @blp.arguments(TagSchema)
@@ -88,8 +88,12 @@ class TagsbyID(MethodView):
 
         blp.check_etag(tag, TagSchema)
 
-        db.session.delete(tag)
-        db.session.commit()
+        try:
+            db.session.delete(tag)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            abort(422)
 
 @blp.route('/<int:tag_id>/recipes')
 class TagRecipes(MethodView):
@@ -101,7 +105,7 @@ class TagRecipes(MethodView):
         return Tag.query.get_or_404(tag_id).recipes
 
     @blp.etag
-    @blp.arguments(TagQueryArgsSchema)
+    @blp.arguments(TagRecipeSchema)
     @blp.response(204)
     def post(self, args, tag_id):
         """Add association between a tag and recipe"""
@@ -127,7 +131,10 @@ class TagRecipesDelete(MethodView):
     def delete(self, tag_id, recipe_id):
         """Delete association between a tag and recipe"""
         tag = Tag.query.get_or_404(tag_id)
-        recipe = tags.recipe.get_or_404(recipe_id)
+        recipe = Recipe.query.get_or_404(recipe_id)
+
+        if recipe not in tag.recipes:
+            abort(422)
 
         blp.check_etag(tag, TagSchema)
 

@@ -5,7 +5,7 @@ from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
 from myopenpantry.models import Recipe, Ingredient, Item
 
-from .schemas import IngredientSchema, IngredientQueryArgsSchema
+from .schemas import IngredientSchema, IngredientQueryArgsSchema, IngredientItemsSchema, IngredientRecipesSchema
 from ..items.schemas import ItemSchema
 from ..recipes.schemas import RecipeSchema 
 
@@ -24,7 +24,7 @@ class Ingredients(MethodView):
     @blp.response(200, IngredientSchema(many=True))
     @blp.paginate(SQLCursorPage)
     def get(self, args):
-        """List ingredients"""
+        """List all ingredients or filter by args"""
         recipe_id = args.pop('recipe_id', None)
         item_id = args.pop('item_id', None)
         name = args.pop('name', None)
@@ -43,7 +43,7 @@ class Ingredients(MethodView):
             name = f"%{name}%"
             ret = ret.filter(Ingredient.name.like(name))
 
-        return ret
+        return ret.order_by(Ingredient.id)
 
     @blp.etag
     @blp.arguments(IngredientSchema)
@@ -75,8 +75,11 @@ class IngredientsById(MethodView):
     def put(self, new_ingredient, ingredient_id):
         """Update an existing ingredient"""
         ingredient = Ingredient.query.get_or_404(ingredient_id)
+
         blp.check_etag(ingredient, IngredientSchema)
+
         IngredientSchema().update(ingredient, new_ingredient)
+
         try:
             db.session.add(ingredient)
             db.session.commit()
@@ -91,9 +94,16 @@ class IngredientsById(MethodView):
     def delete(self, ingredient_id):
         """Delete an ingredient"""
         ingredient = Ingredient.query.get_or_404(ingredient_id)
+
         blp.check_etag(ingredient, IngredientSchema)
-        db.session.delete(ingredient)
-        db.session.commit()
+
+        try:
+            db.session.delete(ingredient)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            abort(422)
+
 
 @blp.route('/<int:ingredient_id>/recipes')
 class IngredientRecipes(MethodView):
@@ -104,14 +114,14 @@ class IngredientRecipes(MethodView):
         """Get recipes associated with the ingredient"""
         return Ingredient.query.get_or_404(ingredient_id).recipes
 
-@blp.route('/<int:ingredient_id>/recipes/<int:recipe_id>')
-class IngredientRecipesOps(MethodView):
-
     @blp.etag
+    @blp.arguments(IngredientRecipesSchema)
     @blp.response(204)
-    def put(self, ingredient_id, recipe_id):
+    def post(self, ingredient_id):
         """Add association between a recipe and ingredient"""
         ingredient = Ingredient.get_or_404(ingredient_id)
+
+        recipe_id = args.pop('recipe_id', None)
         recipe = Recipe.query.get_or_404(recipe_id)
 
         blp.check_etag(ingredient, IngredientSchema)
@@ -125,7 +135,11 @@ class IngredientRecipesOps(MethodView):
             db.session.rollback()
             abort(422)
 
+@blp.route('/<int:ingredient_id>/recipes/<int:recipe_id>')
+class IngredientRecipesDelete(MethodView):
+
     @blp.etag
+    @blp.arguments(IngredientRecipesSchema)
     @blp.response(204)
     def delete(self, ingredient_id, recipe_id):
         """Delete association between a recipe and ingredient"""
@@ -152,14 +166,14 @@ class IngredientItems(MethodView):
         """Get items associated with the ingredient"""
         return Ingredient.query.get_or_404(ingredient_id).items
 
-@blp.route('/<int:ingredient_id>/items/<int:item_id>')
-class IngredientItemsOps(MethodView):
-
     @blp.etag
+    @blp.arguments(IngredientItemsSchema)
     @blp.response(204)
-    def put(self, ingredient_id, item_id):
+    def post(self, ingredient_id):
         """Add association between a recipe and ingredient"""
         ingredient = Ingredient.query.get_or_404(ingredient_id)
+
+        item_id = args.pop('item_id', None)
         item = Item.query.get_or_404(item_id)
 
         blp.check_etag(ingredient, IngredientSchema)
@@ -173,7 +187,11 @@ class IngredientItemsOps(MethodView):
             db.session.rollback()
             abort(422)
 
+@blp.route('/<int:ingredient_id>/items/<int:item_id>')
+class IngredientItemsDelete(MethodView):
+
     @blp.etag
+    @blp.arguments(IngredientItemsSchema)
     @blp.response(204)
     def delete(self, ingredient_id, item_id):
         """Delete association between a recipe and ingredient"""

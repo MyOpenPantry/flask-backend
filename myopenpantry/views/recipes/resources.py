@@ -3,7 +3,7 @@ from flask_smorest import abort
 
 from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
-from myopenpantry.models import Recipe
+from myopenpantry.models import Recipe, Tag
 
 from sqlalchemy import or_
 
@@ -26,7 +26,7 @@ class Recipes(MethodView):
     @blp.response(200, RecipeSchema(many=True))
     @blp.paginate(SQLCursorPage)
     def get(self, args):
-        """List recipes"""
+        """List all recipes or filter by args"""
         ingredient_ids = args.pop('ingredient_ids', None)
         tag_ids = args.pop('tag_ids', None)
         names = args.pop('names', None)
@@ -41,7 +41,7 @@ class Recipes(MethodView):
         elif names is not None:
             ret = ret.filter(or_(Recipe.name.like(f"%{name}%") for name in names))
 
-        return ret
+        return ret.order_by(Recipe.id)
 
     @blp.etag
     @blp.arguments(RecipeSchema)
@@ -96,8 +96,12 @@ class RecipesbyID(MethodView):
 
         blp.check_etag(recipe, RecipeSchema)
 
-        db.session.delete(recipe)
-        db.session.commit()
+        try:
+            db.session.delete(recipe)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            abort(422)
 
 @blp.route('/<int:recipe_id>/tags')
 class RecipeTags(MethodView):
@@ -111,16 +115,15 @@ class RecipeTags(MethodView):
     @blp.etag
     @blp.arguments(RecipeTagSchema)
     @blp.response(204)
-    def post(self, recipe_id):
+    def post(self, args, recipe_id):
         """Add association between a recipe and tag"""
         recipe = Recipe.query.get_or_404(recipe_id)
-        blp.check_etag(recipe, RecipeSchema)
 
         # tag_ids are required by the schema, so shouldn't need to check for if they are none
         tag_ids = args.pop('tag_ids', None)
         for tag_id in tag_ids:
             tag = Tag.query.get_or_404(tag_id)
-            recipe.tags.add(tag)
+            recipe.tags.append(tag)
 
         try:
             db.session.add(recipe)
@@ -137,11 +140,15 @@ class RecipeTagsDelete(MethodView):
     def delete(self, recipe_id, tag_id):
         """Delete association between a recipe and tag"""
         recipe = Recipe.query.get_or_404(recipe_id)
-        tag = recipe.tags.get_or_404(tag_id)
+        tag = Tag.query.get_or_404(tag_id)
+
+        if tag not in recipe.tags:
+            abort(422)
 
         blp.check_etag(recipe, RecipeSchema)
 
-        recipe.tags.remove(tag)
+        if tag in recipe.tags:
+            recipe.tags.remove(tag)
 
         try:
             db.session.add(recipe)
@@ -163,9 +170,10 @@ class RecipeIngredients(MethodView):
     @blp.etag
     @blp.arguments(RecipeIngredientSchema)
     @blp.response(204)
-    def post(self, recipe_id, ingredient_id):
+    def post(self, args, recipe_id):
         """Add association between a recipe and ingredient"""
         recipe = Recipe.query.get_or_404(recipe_id)
+
         blp.check_etag(recipe, RecipeSchema)
 
         # tag_ids are required by the schema, so shouldn't need to check for if they are none
@@ -181,8 +189,7 @@ class RecipeIngredients(MethodView):
             db.session.rollback()
             abort(422)
 
-
-@blp.route('/<int:recipe_id>/tags/<int:ingredient_id>')
+@blp.route('/<int:recipe_id>/ingredients/<int:ingredient_id>')
 class RecipeIngredientsDelete(MethodView):
 
     @blp.etag
@@ -191,6 +198,9 @@ class RecipeIngredientsDelete(MethodView):
         """Delete association between a recipe and ingredient"""
         recipe = Recipe.query.get_or_404(recipe_id)
         ingredient = recipe.ingredients.get_or_404(ingredient_id)
+
+        if ingredient not in recipe.ingredients:
+            abort(422)
 
         blp.check_etag(recipe, RecipeSchema)
 

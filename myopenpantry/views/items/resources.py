@@ -25,7 +25,7 @@ class Items(MethodView):
     @blp.response(200, ItemSchema(many=True))
     @blp.paginate(SQLCursorPage)
     def get(self, args):
-        """List all items"""
+        """List all items or filter by args"""
         names = args.pop('names', None)
         ingredient_ids = args.pop('ingredient_ids', None)
         product_ids = args.pop('product_ids', None)
@@ -43,7 +43,7 @@ class Items(MethodView):
             # ret = ret.filter(Item.name.like(any_([f"%{name}%" for name in names])))
             ret = ret.filter(or_(Item.name.like(f"%{name}%") for name in names))
 
-        return ret
+        return ret.order_by(Item.id)
 
     @blp.etag
     @blp.arguments(ItemSchema)
@@ -51,6 +51,7 @@ class Items(MethodView):
     def post(self, new_item):
         """Add a new item"""
         item = Item(**new_item)
+
         try:
             db.session.add(item)
             db.session.commit()
@@ -58,6 +59,7 @@ class Items(MethodView):
             db.session.rollback()
             # TODO be more descriptive and log
             abort(422)
+
         return item
 
 @blp.route('/<int:item_id>')
@@ -75,8 +77,11 @@ class ItemsById(MethodView):
     def put(self, new_item, item_id):
         """Update an existing item"""
         item = Item.query.get_or_404(item_id)
+
         blp.check_etag(item, ItemSchema)
+
         ItemSchema().update(item, new_item)
+
         try:
             db.session.add(item)
             db.session.commit()
@@ -84,6 +89,7 @@ class ItemsById(MethodView):
             db.session.rollback()
             # TODO be more descriptive and log
             abort(422)
+
         return item
 
     @blp.etag
@@ -91,9 +97,16 @@ class ItemsById(MethodView):
     def delete(self, item_id):
         """Delete an item"""
         item = Item.query.get_or_404(item_id)
+
         blp.check_etag(item, ItemSchema)
-        db.session.delete(item)
-        db.session.commit()
+
+        try:
+            db.session.delete(item)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            abort(422)
+
 
 @blp.route('/<int:item_id>/ingredient')
 class ItemsIngredient(MethodView):
@@ -103,3 +116,20 @@ class ItemsIngredient(MethodView):
     def get(self, item_id):
         """Get the ingredient associated with the item"""
         return Item.query.get_or_404(item_id).ingredient
+
+    @blp.etag
+    @blp.response(204)
+    def delete(self, item_id):
+        """Delete the association between an item and ingredient"""
+        item = Item.query.get_or_404(item_id)
+
+        blp.check_etag(item, ItemSchema)
+
+        item.ingredient_id = None
+
+        try:
+            db.session.add(item)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            abort(422)

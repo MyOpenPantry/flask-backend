@@ -19,7 +19,13 @@ class RecipeQueryArgsSchema(Schema):
     ingredient_ids = ma.fields.List(ma.fields.Int(strict=True, validate=ma.validate.Range(min=1)))
 
 class RecipeTagSchema(Schema):
-    tag_ids = ma.fields.List(ma.fields.Int(strict=True, validate=ma.validate.Range(min=1)), required=True)
+    tag_ids = ma.fields.List(
+        ma.fields.Int(strict=True, validate=ma.validate.Range(min=1)),
+        required=True, validate=ma.validate.Length(min=1)
+    )
 
 class RecipeIngredientSchema(Schema):
-    ingredient_ids = ma.fields.List(ma.fields.Int(strict=True, validate=ma.validate.Range(min=1)), required=True)
+    ingredient_ids = ma.fields.List(
+        ma.fields.Int(strict=True, validate=ma.validate.Range(min=1)),
+        required=True, validate=ma.validate.Length(min=1)
+    )
