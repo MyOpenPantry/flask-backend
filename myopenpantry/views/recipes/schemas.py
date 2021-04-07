@@ -15,9 +15,18 @@ class RecipeSchema(AutoSchema):
         table = Recipe.__table__
 
 class RecipeQueryArgsSchema(Schema):
-    names = ma.fields.List(ma.fields.Str(validate=ma.validate.Length(min=1)), validate=ma.validate.Length(min=1))
-    tag_ids = ma.fields.List(ma.fields.Int(strict=True, validate=ma.validate.Range(min=1)), validate=ma.validate.Length(min=1))
-    ingredient_ids = ma.fields.List(ma.fields.Int(strict=True, validate=ma.validate.Range(min=1)), validate=ma.validate.Length(min=1))
+    names = ma.fields.List(
+        ma.fields.Str(validate=ma.validate.Length(min=1)),
+        validate=ma.validate.Length(min=1)
+    )
+    tag_ids = ma.fields.List(
+        ma.fields.Int(strict=True, validate=ma.validate.Range(min=1)),
+        validate=ma.validate.Length(min=1)
+    )
+    ingredient_ids = ma.fields.List(
+        ma.fields.Int(strict=True, validate=ma.validate.Range(min=1)),
+        validate=ma.validate.Length(min=1)
+    )
 
 class RecipeTagSchema(Schema):
     tag_ids = ma.fields.List(
@@ -36,4 +45,7 @@ class RecipeIngredientSchema(AutoSchema):
 
 # TODO better name for this?
 class BulkRecipeIngredientSchema(Schema):
-    recipe_ingredients = ma.fields.List(ma.fields.Nested(RecipeIngredientSchema), validate=ma.validate.Length(min=1))
+    recipe_ingredients = ma.fields.List(
+        ma.fields.Nested(RecipeIngredientSchema),
+        validate=ma.validate.Length(min=1)
+    )

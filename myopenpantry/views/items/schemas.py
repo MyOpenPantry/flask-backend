@@ -14,6 +14,15 @@ class ItemSchema(AutoSchema):
         table = Item.__table__
 
 class ItemQueryArgsSchema(Schema):
-    names = ma.fields.List(ma.fields.Str(validate=ma.validate.Length(min=1)))
-    product_ids = ma.fields.List(ma.fields.Int(strict=True, validate=ma.validate.Range(min=1, max=9999999999999)))
-    ingredient_ids = ma.fields.List(ma.fields.Int(strict=True, validate=ma.validate.Range(min=1)))
+    names = ma.fields.List(
+        ma.fields.Str(validate=ma.validate.Length(min=1)),
+        validate=ma.validate.Length(min=1)
+    )
+    product_ids = ma.fields.List(ma.fields.Int(
+        strict=True, validate=ma.validate.Range(min=1, max=9999999999999)),
+        validate=ma.validate.Length(min=1)
+    )
+    ingredient_ids = ma.fields.List(
+        ma.fields.Int(strict=True, validate=ma.validate.Range(min=1)),
+        validate=ma.validate.Length(min=1)
+    )

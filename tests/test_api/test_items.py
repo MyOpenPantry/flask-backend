@@ -322,6 +322,16 @@ class TestItems:
         assert response.status_code == 200
         assert len(response.json) == len(new_items)
 
+        # empty product id
+        search_product = {
+            'product_ids':[],
+        }
+        response = client.get('/items/',
+            json = search_product
+        )
+
+        assert response.status_code == 422
+
         # single product id
         search_product = {
             'product_ids':[123],
@@ -345,6 +355,16 @@ class TestItems:
         assert response.status_code == 200
         assert len(response.json) == 2
 
+        # empty ingredient id
+        search_ingredient = {
+            'ingredient_ids':[],
+        }
+        response = client.get('/items/',
+            json = search_ingredient
+        )
+
+        assert response.status_code == 422
+
         # single ingredient id
         search_ingredient = {
             'ingredient_ids':[ingredient_ids['chicken breast']],
@@ -366,6 +386,16 @@ class TestItems:
 
         assert response.status_code == 200
         assert len(response.json) == 0
+
+        # empty name
+        search_name = {
+            'names':[]
+        }
+        response = client.get('/items/',
+            json = search_name
+        )
+
+        assert response.status_code == 422
 
         # single name
         search_name = {

@@ -298,7 +298,7 @@ class TestTags:
             json = query
         )
 
-        assert len(response.json) == len(tags)
+        assert response.status_code == 422
 
         query = {'names':['meat']}
         response = client.get('tags/',
