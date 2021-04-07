@@ -12,7 +12,10 @@ class TagSchema(AutoSchema):
         table = Tag.__table__
 
 class TagQueryArgsSchema(Schema):
-    names = ma.fields.List(ma.fields.Str(validate=ma.validate.Length(min=1)), validate=ma.validate.Length(min=1))
+    names = ma.fields.List(
+        ma.fields.Str(validate=ma.validate.Length(min=1)),
+        validate=ma.validate.Length(min=1)
+    )
 
 class TagRecipeSchema(Schema):
     recipe_ids = ma.fields.List(

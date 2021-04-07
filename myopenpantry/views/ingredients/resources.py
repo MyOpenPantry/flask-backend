@@ -1,9 +1,11 @@
 from flask.views import MethodView
 from flask_smorest import abort
 
+from sqlalchemy import or_
+
 from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
-from myopenpantry.models import Recipe, Ingredient, Item
+from myopenpantry.models import Recipe, Ingredient, Item, RecipeIngredient
 
 from .schemas import IngredientSchema, IngredientQueryArgsSchema, IngredientItemsSchema, IngredientRecipesSchema
 from ..items.schemas import ItemSchema
@@ -25,9 +27,9 @@ class Ingredients(MethodView):
     @blp.paginate(SQLCursorPage)
     def get(self, args):
         """List all ingredients or filter by args"""
-        recipe_id = args.pop('recipe_id', None)
-        item_id = args.pop('item_id', None)
-        name = args.pop('name', None)
+        recipe_ids = args.pop('recipe_ids', None)
+        item_ids = args.pop('item_ids', None)
+        names = args.pop('names', None)
 
         ret = Ingredient.query.filter_by(**args)
 
@@ -35,11 +37,13 @@ class Ingredients(MethodView):
 
         # TODO does marshmallow have a way to only allow one of these at a time?
         # recipe_id > item_id > name for search order
-        if recipe_id is not None:
-            ret.join(Recipe, Ingredient.recipes).filter(or_(Recipe.id == id for id in recipe_ids))
-        elif item_id is not None:
-            ret.join(Item, Ingredient.items).filter(or_(Item.id == id for id in item_ids))
-        elif name is not None:
+        if recipe_ids is not None:
+            #ret = ret.join(RecipeIngredient, Recipe.ingredients).filter(or_(RecipeIngredient.ingredient_id == id for id in ingredient_ids))
+            
+            ret = ret.join(RecipeIngredient, Ingredient.recipes).filter(or_(RecipeIngredient.recipe_id == id for id in recipe_ids))
+        elif item_ids is not None:
+            ret = ret.join(Item, Ingredient.items).filter(or_(Item.id == id for id in item_ids))
+        elif names is not None:
             ret = ret.filter(or_(Ingredient.name.like(f"%{name}%") for name in names))
 
         return ret.order_by(Ingredient.id)
