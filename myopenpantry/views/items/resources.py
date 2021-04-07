@@ -107,7 +107,6 @@ class ItemsById(MethodView):
             db.session.rollback()
             abort(422)
 
-
 @blp.route('/<int:item_id>/ingredient')
 class ItemsIngredient(MethodView):
 

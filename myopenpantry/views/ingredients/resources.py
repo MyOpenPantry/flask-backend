@@ -36,12 +36,11 @@ class Ingredients(MethodView):
         # TODO does marshmallow have a way to only allow one of these at a time?
         # recipe_id > item_id > name for search order
         if recipe_id is not None:
-            ret = ret.filter(recipe_id in Ingredient.recipes)
+            ret.join(Recipe, Ingredient.recipes).filter(or_(Recipe.id == id for id in recipe_ids))
         elif item_id is not None:
-            ret = ret.filter(item_id in Ingredient.items)
+            ret.join(Item, Ingredient.items).filter(or_(Item.id == id for id in item_ids))
         elif name is not None:
-            name = f"%{name}%"
-            ret = ret.filter(Ingredient.name.like(name))
+            ret = ret.filter(or_(Ingredient.name.like(f"%{name}%") for name in names))
 
         return ret.order_by(Ingredient.id)
 
@@ -51,6 +50,7 @@ class Ingredients(MethodView):
     def post(self, new_item):
         """Add a new ingredient"""
         ingredient = Ingredient(**new_item)
+
         try:
             db.session.add(ingredient)
             db.session.commit()
@@ -58,6 +58,7 @@ class Ingredients(MethodView):
             db.session.rollback()
             # TODO be more descriptive and log
             abort(422)
+
         return ingredient
 
 @blp.route('/<int:ingredient_id>')
@@ -117,14 +118,17 @@ class IngredientRecipes(MethodView):
     @blp.etag
     @blp.arguments(IngredientRecipesSchema)
     @blp.response(204)
-    def post(self, ingredient_id):
+    def post(self, args, ingredient_id):
         """Add association between a recipe and ingredient"""
         ingredient = Ingredient.get_or_404(ingredient_id)
 
         recipe_id = args.pop('recipe_id', None)
-        recipe = Recipe.query.get_or_404(recipe_id)
+        recipe = Recipe.query.get(recipe_id)
 
-        ingredient.recipes.add(recipe)
+        if recipe is None:
+            abort(422)
+
+        ingredient.recipes.append(recipe)
 
         try:
             db.session.add(ingredient)
@@ -137,7 +141,6 @@ class IngredientRecipes(MethodView):
 class IngredientRecipesDelete(MethodView):
 
     @blp.etag
-    @blp.arguments(IngredientRecipesSchema)
     @blp.response(204)
     def delete(self, ingredient_id, recipe_id):
         """Delete association between a recipe and ingredient"""
@@ -170,14 +173,17 @@ class IngredientItems(MethodView):
     @blp.etag
     @blp.arguments(IngredientItemsSchema)
     @blp.response(204)
-    def post(self, ingredient_id):
+    def post(self, args, ingredient_id):
         """Add association between a recipe and ingredient"""
         ingredient = Ingredient.query.get_or_404(ingredient_id)
 
         item_id = args.pop('item_id', None)
-        item = Item.query.get_or_404(item_id)
+        item = Item.query.get(item_id)
 
-        ingredient.recipes.add(item)
+        if item is None:
+            abort(422)
+
+        ingredient.items.append(item)
 
         try:
             db.session.add(ingredient)
@@ -190,19 +196,19 @@ class IngredientItems(MethodView):
 class IngredientItemsDelete(MethodView):
 
     @blp.etag
-    @blp.arguments(IngredientItemsSchema)
     @blp.response(204)
     def delete(self, ingredient_id, item_id):
         """Delete association between a recipe and ingredient"""
         ingredient = Ingredient.query.get_or_404(ingredient_id)
+
         item = Item.query.with_parent(ingredient).filter(Item.id == item_id).first()
 
         if item is None:
-            abort(404)
+            abort(422)
 
         blp.check_etag(ingredient, IngredientSchema)
 
-        ingredient.recipes.remove(item)
+        ingredient.items.remove(item)
 
         try:
             db.session.add(ingredient)

@@ -121,7 +121,10 @@ class RecipeTags(MethodView):
         # tag_ids are required by the schema, so shouldn't need to check if they are none
         tag_ids = args.pop('tag_ids', None)
         for tag_id in tag_ids:
-            tag = Tag.query.get_or_404(tag_id)
+            tag = Tag.query.get(tag_id)
+
+            if tag is None:
+                abort(422)
 
             recipe.tags.append(tag)
 
@@ -143,7 +146,7 @@ class RecipeTagsDelete(MethodView):
         tag = Tag.query.with_parent(recipe).filter(Tag.id == tag_id).first()
 
         if tag is None:
-            abort(404)
+            abort(422)
 
         blp.check_etag(recipe, RecipeSchema)
 
@@ -172,10 +175,12 @@ class RecipeIngredients(MethodView):
         """Add association between a recipe and ingredient"""
         recipe = Recipe.query.get_or_404(recipe_id)
 
-        # tag_ids are required by the schema, so shouldn't need to check for if they are none
         recipe_ingredients = args.pop('recipe_ingredients', None)
         for recipe_ingredient in recipe_ingredients:
-            ingredient = Ingredient.query.get_or_404(recipe_ingredient['ingredient_id'])
+            ingredient = Ingredient.query.get(recipe_ingredient['ingredient_id'])
+
+            if ingredient is None:
+                abort(422)
 
             association = RecipeIngredient(amount= recipe_ingredient['amount'], unit=recipe_ingredient['unit'])
             association.recipe_id = recipe_id

@@ -113,7 +113,11 @@ class TagRecipes(MethodView):
 
         recipe_ids = args.pop('recipe_ids', None)
         for recipe_id in recipe_ids:
-            recipe = Recipe.query.get_or_404(recipe_id)
+            recipe = Recipe.query.get(recipe_id)
+
+            if recipe is None:
+                abort(422)
+
             tag.recipes.append(recipe)
 
         try:

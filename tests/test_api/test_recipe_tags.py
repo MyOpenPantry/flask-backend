@@ -142,6 +142,20 @@ class TestRecipeTags:
 
         assert response.status_code == 204
 
+        # try deleting the now invalid tag again (for code coverage)
+        response = client.delete(f'recipes/{recipe_id}/tags/{tag_ids[0]}',
+            headers = {'If-Match': recipe_etag},
+        )
+
+        assert response.status_code == 422
+
+        # test deleting an invalid tag (for code coverage)
+        response = client.delete(f'tags/{tag_ids[0]}/recipes/{recipe_id}',
+            headers = {'If-Match': tag_etags[0]},
+        )
+
+        assert response.status_code == 422
+
         response = client.get(f'recipes/{recipe_id}/tags')
 
         assert response.status_code == 200
@@ -212,7 +226,7 @@ class TestRecipeTags:
             json = {'tag_ids': [tag_ids[1] + 1]}
         )
 
-        assert response.status_code == 404
+        assert response.status_code == 422
 
         # valid tag, invalid recipe
         response = client.post(f'tags/{tag_ids[0]}/recipes',
@@ -220,7 +234,7 @@ class TestRecipeTags:
             json = {'recipe_ids': [recipe_id + 1]}
         )
 
-        assert response.status_code == 404
+        assert response.status_code == 422
 
         # invalid tag, valid recipe
         response = client.post(f'tags/{tag_ids[1] + 1}/recipes',
