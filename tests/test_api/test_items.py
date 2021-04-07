@@ -27,7 +27,7 @@ class TestItems:
         assert response.status_code == 200
         assert len(response.json) == 1
 
-    def test_get(self, app):
+    def test_get_by_id(self, app):
         client = app.test_client()
 
         new_item = {
@@ -344,7 +344,6 @@ class TestItems:
 
         assert response.status_code == 200
         assert len(response.json) == 2
-
 
         # single ingredient id
         search_ingredient = {

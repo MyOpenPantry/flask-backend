@@ -1,4 +1,4 @@
-from .associations import RecipeIngredients, recipe_tags # noqa
+from .associations import RecipeIngredient, recipe_tags # noqa
 from .ingredients import Ingredient # noqa
 from .recipes import Recipe # noqa
 from .items import Item # noqa

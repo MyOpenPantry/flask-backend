@@ -15,7 +15,7 @@ recipe_tags = db.Table('recipe_tags', db.Model.metadata,
 
 # SQLAlchemy docs say that an association table with more attributes than just the ids is best defined in a class
 # map ingredients to recipes, allowing for defined amounts in the user defined units
-class RecipeIngredients(db.Model):
+class RecipeIngredient(db.Model):
     __tablename__ = 'recipe_ingredients'
 
     recipe_id = sa.Column(sa.Integer, sa.ForeignKey('recipes.id'), primary_key=True)

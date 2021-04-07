@@ -3,13 +3,12 @@ from flask_smorest import abort
 
 from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
-from myopenpantry.models import Recipe, Tag
+from myopenpantry.models import Recipe, Ingredient, Tag, RecipeIngredient
 
 from sqlalchemy import or_
 
-from .schemas import RecipeSchema, RecipeQueryArgsSchema, RecipeTagSchema, RecipeIngredientSchema
+from .schemas import RecipeSchema, RecipeQueryArgsSchema, RecipeTagSchema, BulkRecipeIngredientSchema, RecipeIngredientSchema
 from ..tags.schemas import TagSchema
-from ..ingredients.schemas import IngredientSchema
 
 blp = Blueprint(
     'Recipes',
@@ -35,9 +34,9 @@ class Recipes(MethodView):
 
         # TODO does marshmallow have a way to only allow one of these at a time?
         if ingredient_ids is not None:
-            ret = ret.filter(Recipe.ingredients.in_(ingredient_ids))
+            ret = ret.join(RecipeIngredient, Recipe.ingredients).filter(or_(RecipeIngredient.ingredient_id == id for id in ingredient_ids))
         elif tag_ids is not None:
-            ret = ret.filter(Recipe.tags.id.in_(tag_ids))
+            ret = ret.join(Tag, Recipe.tags).filter(or_(Tag.id == id for id in tag_ids))
         elif names is not None:
             ret = ret.filter(or_(Recipe.name.like(f"%{name}%") for name in names))
 
@@ -161,23 +160,28 @@ class RecipeTagsDelete(MethodView):
 class RecipeIngredients(MethodView):
 
     @blp.etag
-    @blp.response(200, IngredientSchema(many=True))
+    @blp.response(200, RecipeIngredientSchema(many=True))
     def get(self, recipe_id):
         """Get ingredients associated with a recipe"""
         return Recipe.query.get_or_404(recipe_id).ingredients
 
     @blp.etag
-    @blp.arguments(RecipeIngredientSchema)
+    @blp.arguments(BulkRecipeIngredientSchema)
     @blp.response(204)
     def post(self, args, recipe_id):
         """Add association between a recipe and ingredient"""
         recipe = Recipe.query.get_or_404(recipe_id)
 
         # tag_ids are required by the schema, so shouldn't need to check for if they are none
-        ingredient_ids = args.pop('ingredient_ids', None)
-        for ingredient_id in ingredient_ids:
-            ingredient = Ingredient.query.get_or_404(ingredient_id)
-            recipe.ingredientss.add(ingredient)
+        recipe_ingredients = args.pop('recipe_ingredients', None)
+        for recipe_ingredient in recipe_ingredients:
+            ingredient = Ingredient.query.get_or_404(recipe_ingredient['ingredient_id'])
+
+            association = RecipeIngredient(amount= recipe_ingredient['amount'], unit=recipe_ingredient['unit'])
+            association.recipe_id = recipe_id
+            association.ingredient = ingredient
+
+            recipe.ingredients.append(association)
 
         try:
             db.session.add(recipe)
@@ -194,9 +198,8 @@ class RecipeIngredientsDelete(MethodView):
     def delete(self, recipe_id, ingredient_id):
         """Delete association between a recipe and ingredient"""
         recipe = Recipe.query.get_or_404(recipe_id)
-        #ingredient = Tag.query.join(Tag, Recipe.tags).filter(Tag.id == tag_id).first()
-        #ingredient = recipe.ingredients.filter(ingredient.id == ingredient_id).first()
-        ingredient = ingredient.query.with_parent(recipe).filter(Ingredient.id == ingredient_id).first()
+
+        ingredient = Ingredient.query.with_parent(recipe).filter(Ingredient.id == ingredient_id).first()
 
         if ingredient is None:
             abort(422)

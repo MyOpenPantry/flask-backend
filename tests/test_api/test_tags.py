@@ -26,7 +26,7 @@ class TestTags:
         assert response.status_code == 200
         assert len(response.json) == 1
 
-    def test_get_item(self, app):
+    def test_get_by_id(self, app):
         client = app.test_client()
 
         tag = {

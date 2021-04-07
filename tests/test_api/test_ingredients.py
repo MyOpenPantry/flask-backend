@@ -3,9 +3,6 @@ from datetime import datetime
 import dateutil.parser
 
 class TestIngredients:
-    def test_query_recipes(self, app):
-        pass
-
     def test_get_empty(self, app):
         client = app.test_client()
 
@@ -44,7 +41,7 @@ class TestIngredients:
         assert response.status_code == 200
         assert len(response.json) == len(ingredients)
 
-    def test_get(self, app):
+    def test_get_by_id(self, app):
         client = app.test_client()
 
         new_ingredient = {
@@ -122,7 +119,33 @@ class TestIngredients:
         assert response.status_code == 422
 
     def test_post_existing(self, app):
-        pass
+        client = app.test_client()
+
+        new_ingredient = {
+            'name':'Eggs',
+        }
+
+        response = client.post('/ingredients/', 
+            headers = {"Content-Type": "application/json"},
+            json = new_ingredient,
+        )
+
+        assert response.status_code == 201
+
+        id = response.json['id']
+
+        response = client.get(f'/ingredients/{id}')
+
+        assert response.status_code == 200
+        for k,v in new_ingredient.items():
+            assert response.json[k] == v
+
+        response = client.post('/ingredients/', 
+            headers = {"Content-Type": "application/json"},
+            json = new_ingredient,
+        )
+
+        assert response.status_code == 422
 
     def test_put(self, app):
         client = app.test_client()

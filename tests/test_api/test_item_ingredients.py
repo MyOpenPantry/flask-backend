@@ -1,7 +1,9 @@
 import pytest, json
+from datetime import datetime
+import dateutil.parser
 
 class TestItemIngredients:
-    def test_link_item_ingredient(self, app):
+    def test_link_get(self, app):
         client = app.test_client()
 
         # create an item with no ingredient id set
@@ -35,7 +37,7 @@ class TestItemIngredients:
 
         ingredient_id = response.json['id']
 
-        # create another new item, this time with the newly created ingredient id
+        # create another item, this time with the newly created ingredient id
         new_item2 = {
             'name':'Costco Chicken Thighs',
             'amount':2,
@@ -59,7 +61,7 @@ class TestItemIngredients:
         assert response.status_code == 200
         assert response.json['ingredient_id'] == ingredient_id
 
-    def test_unlinking(self, app):
+    def test_unlink(self, app):
         client = app.test_client()
 
         new_ingredient = {
@@ -107,7 +109,7 @@ class TestItemIngredients:
         assert response.status_code == 200
 
     # sqlite doesn't enforce foreign key constraints by default so test that it is enabled (extensions/database/__init__.py)
-    def test_invalid_ingredient(self, app):
+    def test_link_invalid(self, app):
         client = app.test_client()
 
         new_item = {
@@ -123,130 +125,3 @@ class TestItemIngredients:
         )
 
         assert response.status_code == 422
-
-    def test_get_item_ingredient(self, app):
-        client = app.test_client()
-
-        new_ingredient = {
-            'name':'grape',
-        }
-
-        response = client.post('/ingredients/', 
-            headers = {"Content-Type": "application/json"},
-            json = new_ingredient,
-        )
-
-        assert response.status_code == 201
-
-        ingredient = response.json
-
-        new_item = {
-            'name':'Champagne Grapes',
-            'amount':567,
-            'ingredient_id': ingredient['id']
-        }
-
-        response = client.post('/items/', 
-            headers = {"Content-Type": "application/json"},
-            json = new_item,
-        )
-
-        assert response.status_code == 201
-
-        item = response.json
-
-        response = client.get(f'/items/{item["id"]}/ingredient')
-
-        assert response.status_code == 200
-        assert response.json == ingredient
-
-    def test_get_empty_item_ingredient(self, app):
-        client = app.test_client()
-
-        new_item = {
-            'name':'Champagne Grapes',
-            'amount':567,
-        }
-
-        response = client.post('/items/', 
-            headers = {"Content-Type": "application/json"},
-            json = new_item,
-        )
-
-        assert response.status_code == 201
-
-        item = response.json
-
-        response = client.get(f'/items/{item["id"]}/ingredient')
-
-        assert response.json == {}
-
-    def test_get_ingredient_items(self, app):
-        client = app.test_client()
-
-        new_ingredient = {
-            'name':'grape',
-        }
-
-        response = client.post('/ingredients/', 
-            headers = {"Content-Type": "application/json"},
-            json = new_ingredient,
-        )
-
-        assert response.status_code == 201
-
-        ingredient = response.json
-
-        new_item = {
-            'name':'Champagne Grapes',
-            'amount':567,
-            'ingredient_id': ingredient['id']
-        }
-
-        new_item2 = {
-            'name':'Red Grapes',
-            'amount':2,
-            'ingredient_id': ingredient['id']
-        }
-
-        response = client.post('/items/', 
-            headers = {"Content-Type": "application/json"},
-            json = new_item,
-        )
-
-        assert response.status_code == 201
-
-        item = response.json
-
-        response = client.post('/items/', 
-            headers = {"Content-Type": "application/json"},
-            json = new_item2,
-        )
-
-        assert response.status_code == 201
-
-        item2 = response.json
-
-        response = client.get(f'/ingredients/{ingredient["id"]}/items')
-
-        assert response.status_code == 200
-        assert response.json == [item, item2]
-
-    def test_get_empty_ingredient_items(self, app):
-        client = app.test_client()
-
-        new_ingredient = {
-            'name':'grape',
-        }
-
-        response = client.post('/ingredients/', 
-            headers = {"Content-Type": "application/json"},
-            json = new_ingredient,
-        )
-
-        assert response.status_code == 201
-
-        response = client.get(f'/ingredients/{response.json["id"]}/items')
-
-        assert response.status_code == 200
-        assert response.json == []

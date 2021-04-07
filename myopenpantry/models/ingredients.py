@@ -13,4 +13,4 @@ class Ingredient(db.Model):
     # many to one, with Ingredient being the one 
     items = relationship('Item', back_populates="ingredient")
     # many to many
-    recipes = relationship("RecipeIngredients", back_populates="ingredient")
+    recipes = relationship("RecipeIngredient", back_populates="ingredient")
