@@ -26,6 +26,11 @@ Note: The project currently uses sqlite as the database. This is subject to chan
  pytest tests
 ```
 
+## Running Tests with coverage
+```bash
+pytest --cov=myopenpantry --cov-report html tests/
+```
+
 ## Starting the Development Server
 ```bash
  echo $'FLASK_APP=myopenpantry\nFLASK_ENV=development' > .env
