@@ -1,5 +1,4 @@
 import pytest, json
-from datetime import datetime
 import dateutil.parser
 
 class TestItems:

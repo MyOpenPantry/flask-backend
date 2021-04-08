@@ -182,8 +182,8 @@ class RecipeIngredients(MethodView):
             if ingredient is None:
                 abort(422)
 
-            association = RecipeIngredient(amount= recipe_ingredient['amount'], unit=recipe_ingredient['unit'])
-            association.recipe_id = recipe_id
+            association = RecipeIngredient(amount=recipe_ingredient['amount'], unit=recipe_ingredient['unit'])
+            association.recipe = recipe
             association.ingredient = ingredient
 
             recipe.ingredients.append(association)

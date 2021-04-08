@@ -1,6 +1,4 @@
 import pytest, json
-from datetime import datetime
-import dateutil.parser
 
 class TestIngredients:
     def test_get_empty(self, app):
@@ -300,12 +298,12 @@ class TestIngredients:
             recipe_ids[response.json['name']] = response.json['id']
 
         associations = [
-            ['Black Beans','Black Bean Pineapple Salsa', 2, '15oz cans'],
-            ['Pineapple','Black Bean Pineapple Salsa', 1, 'pineapple'],
-            ['Tomato','Fruit Salad', 6, 'tomato'],
-            ['Chicken Breast','Chicken Salad', 2, 'lbs'],
-            ['Rice','Red Beans and Rice', 2, 'cups'],
-            ['Tomato','Black Bean Pineapple Salsa', 2, 'tomato'],
+            ['Black Beans','Black Bean Pineapple Salsa', 2.0, '15oz cans'],
+            ['Pineapple','Black Bean Pineapple Salsa', 1.0, 'pineapple'],
+            ['Tomato','Fruit Salad', 0.5, 'tomato'],
+            ['Chicken Breast','Chicken Salad', 2.0, 'lbs'],
+            ['Rice','Red Beans and Rice', 2.0, 'cups'],
+            ['Tomato','Black Bean Pineapple Salsa', 2.0, 'tomato'],
         ]
 
         for i_name, r_name, amount, unit in associations:

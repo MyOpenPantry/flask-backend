@@ -1,6 +1,4 @@
 import pytest, json
-from datetime import datetime
-import dateutil.parser
 
 class TestRecipes:
     def test_get_empty(self, app):

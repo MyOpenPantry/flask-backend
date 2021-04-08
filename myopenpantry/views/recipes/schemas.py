@@ -40,7 +40,7 @@ class RecipeIngredientSchema(AutoSchema):
     recipe_id = field_for(RecipeIngredient, 'recipe_id', dump_only=True, validate=ma.validate.Range(min=1))
 
     ingredient_id = ma.fields.Int(required=True, strict=True, validate=ma.validate.Range(min=1))
-    amount = ma.fields.Decimal(required=True, strict=True, validate=ma.validate.Range(min=0.0))
+    amount = ma.fields.Float(required=True, strict=True, validate=ma.validate.Range(min=0.0))
     unit = ma.fields.Str(required=True, validate=ma.validate.Length(min=1))
 
 # TODO better name for this?

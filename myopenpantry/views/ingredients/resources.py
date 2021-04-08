@@ -7,7 +7,7 @@ from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
 from myopenpantry.models import Recipe, Ingredient, Item, RecipeIngredient
 
-from .schemas import IngredientSchema, IngredientQueryArgsSchema, IngredientItemsSchema, IngredientRecipesSchema
+from .schemas import IngredientSchema, IngredientQueryArgsSchema, IngredientItemsSchema, BulkIngredientRecipesSchema
 from ..items.schemas import ItemSchema
 from ..recipes.schemas import RecipeSchema 
 
@@ -38,8 +38,6 @@ class Ingredients(MethodView):
         # TODO does marshmallow have a way to only allow one of these at a time?
         # recipe_id > item_id > name for search order
         if recipe_ids is not None:
-            #ret = ret.join(RecipeIngredient, Recipe.ingredients).filter(or_(RecipeIngredient.ingredient_id == id for id in ingredient_ids))
-            
             ret = ret.join(RecipeIngredient, Ingredient.recipes).filter(or_(RecipeIngredient.recipe_id == id for id in recipe_ids))
         elif item_ids is not None:
             ret = ret.join(Item, Ingredient.items).filter(or_(Item.id == id for id in item_ids))
@@ -120,19 +118,24 @@ class IngredientRecipes(MethodView):
         return Ingredient.query.get_or_404(ingredient_id).recipes
 
     @blp.etag
-    @blp.arguments(IngredientRecipesSchema)
+    @blp.arguments(BulkIngredientRecipesSchema)
     @blp.response(204)
     def post(self, args, ingredient_id):
         """Add association between a recipe and ingredient"""
         ingredient = Ingredient.get_or_404(ingredient_id)
 
-        recipe_id = args.pop('recipe_id', None)
-        recipe = Recipe.query.get(recipe_id)
+        recipe_ingredients = args.pop('recipe_ingredients', None)
+        for recipe_ingredient in recipe_ingredients:
+            recipe = Recipe.query.get(recipe_ingredient['recipe_id'])
 
-        if recipe is None:
-            abort(422)
+            if recipe is None:
+                abort(422)
 
-        ingredient.recipes.append(recipe)
+            association = RecipeIngredient(amount=recipe_ingredient['amount'], unit=recipe_ingredient['unit'])
+            association.ingredient = ingredient
+            association.recipe = recipe
+
+            ingredient.recipes.append(association)
 
         try:
             db.session.add(ingredient)
@@ -149,6 +152,7 @@ class IngredientRecipesDelete(MethodView):
     def delete(self, ingredient_id, recipe_id):
         """Delete association between a recipe and ingredient"""
         ingredient = Ingredient.query.get_or_404(ingredient_id)
+
         recipe = Recipe.query.with_parent(ingredient).filter(Recipe.id == recipe_id).first()
 
         if recipe is None:
