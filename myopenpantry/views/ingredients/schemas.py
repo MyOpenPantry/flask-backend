@@ -37,8 +37,8 @@ class IngredientRecipesSchema(Schema):
     ingredient_id = field_for(RecipeIngredient, 'ingredient_id', dump_only=True, validate=ma.validate.Range(min=1))
 
     recipe_id = ma.fields.Int(required=True, strict=True, validate=ma.validate.Range(min=1))
-    # TODO Decimal gives and error
-    amount = ma.fields.Decimal(required=True, strict=True, validate=ma.validate.Range())
+    # TODO Decimal gives an error
+    amount = ma.fields.Float(required=True, strict=True, validate=ma.validate.Range())
     unit = ma.fields.Str(required=True, validate=ma.validate.Length(min=1))
 
 # TODO better name for this?

@@ -5,7 +5,7 @@ from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
 from myopenpantry.models import Recipe, Ingredient, Tag, RecipeIngredient
 
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 
 from .schemas import RecipeSchema, RecipeQueryArgsSchema, RecipeTagSchema, BulkRecipeIngredientSchema, RecipeIngredientSchema
 from ..tags.schemas import TagSchema
@@ -183,13 +183,18 @@ class RecipeIngredients(MethodView):
                 abort(422)
 
             association = RecipeIngredient(amount=recipe_ingredient['amount'], unit=recipe_ingredient['unit'])
-            association.recipe = recipe
+            association.ingredient_id = ingredient.id
             association.ingredient = ingredient
+            association.recipe_id = recipe_id
+            association.recipe = recipe
 
+            ingredient.recipes.append(association)
             recipe.ingredients.append(association)
 
         try:
+            db.session.add(ingredient)
             db.session.add(recipe)
+            db.session.add(association)
             db.session.commit()
         except:
             db.session.rollback()
@@ -202,19 +207,19 @@ class RecipeIngredientsDelete(MethodView):
     @blp.response(204)
     def delete(self, recipe_id, ingredient_id):
         """Delete association between a recipe and ingredient"""
+        ingredient = Ingredient.query.get_or_404(ingredient_id)
         recipe = Recipe.query.get_or_404(recipe_id)
 
-        ingredient = Ingredient.query.with_parent(recipe).filter(Ingredient.id == ingredient_id).first()
+        # TODO would a join be better here?
+        association = RecipeIngredient.query.filter(and_(RecipeIngredient.recipe_id == recipe_id, RecipeIngredient.ingredient_id == ingredient_id)).first()
 
-        if ingredient is None:
+        if association is None:
             abort(422)
 
         blp.check_etag(recipe, RecipeSchema)
 
-        recipe.ingredients.remove(ingredient)
-
         try:
-            db.session.add(recipe)
+            db.session.delete(association)
             db.session.commit()
         except:
             db.session.rollback()

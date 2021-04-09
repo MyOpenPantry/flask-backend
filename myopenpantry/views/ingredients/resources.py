@@ -1,13 +1,13 @@
 from flask.views import MethodView
 from flask_smorest import abort
 
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 
 from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
 from myopenpantry.models import Recipe, Ingredient, Item, RecipeIngredient
 
-from .schemas import IngredientSchema, IngredientQueryArgsSchema, IngredientItemsSchema, BulkIngredientRecipesSchema
+from .schemas import IngredientSchema, IngredientQueryArgsSchema, IngredientItemsSchema, BulkIngredientRecipesSchema, IngredientRecipesSchema
 from ..items.schemas import ItemSchema
 from ..recipes.schemas import RecipeSchema 
 
@@ -112,7 +112,7 @@ class IngredientsById(MethodView):
 class IngredientRecipes(MethodView):
 
     @blp.etag
-    @blp.response(200, RecipeSchema(many=True))
+    @blp.response(200, IngredientRecipesSchema(many=True))
     def get(self, ingredient_id):
         """Get recipes associated with the ingredient"""
         return Ingredient.query.get_or_404(ingredient_id).recipes
@@ -122,7 +122,7 @@ class IngredientRecipes(MethodView):
     @blp.response(204)
     def post(self, args, ingredient_id):
         """Add association between a recipe and ingredient"""
-        ingredient = Ingredient.get_or_404(ingredient_id)
+        ingredient = Ingredient.query.get_or_404(ingredient_id)
 
         recipe_ingredients = args.pop('recipe_ingredients', None)
         for recipe_ingredient in recipe_ingredients:
@@ -132,13 +132,18 @@ class IngredientRecipes(MethodView):
                 abort(422)
 
             association = RecipeIngredient(amount=recipe_ingredient['amount'], unit=recipe_ingredient['unit'])
+            association.ingredient_id = ingredient_id
             association.ingredient = ingredient
+            association.recipe_id = recipe.id
             association.recipe = recipe
 
             ingredient.recipes.append(association)
+            recipe.ingredients.append(association)
 
         try:
             db.session.add(ingredient)
+            db.session.add(recipe)
+            db.session.add(association)
             db.session.commit()
         except:
             db.session.rollback()
@@ -152,22 +157,24 @@ class IngredientRecipesDelete(MethodView):
     def delete(self, ingredient_id, recipe_id):
         """Delete association between a recipe and ingredient"""
         ingredient = Ingredient.query.get_or_404(ingredient_id)
+        recipe = Recipe.query.get_or_404(recipe_id)
 
-        recipe = Recipe.query.with_parent(ingredient).filter(Recipe.id == recipe_id).first()
+        # TODO would a join be better here?
+        association = RecipeIngredient.query.filter(and_(RecipeIngredient.recipe_id == recipe_id, RecipeIngredient.ingredient_id == ingredient_id)).first()
 
-        if recipe is None:
-            abort(404)
+        if association is None:
+            abort(422)
 
         blp.check_etag(ingredient, IngredientSchema)
 
-        ingredient.recipes.remove(recipe)
-
-        try:
-            db.session.add(ingredient)
-            db.session.commit()
-        except:
-            db.session.rollback()
-            abort(422)
+        db.session.delete(association)
+        db.session.commit()
+        #try:
+        #    #db.session.delete(association)
+        #    db.session.commit()
+        #except:
+        #    db.session.rollback()
+        #    abort(422)
 
 @blp.route('/<int:ingredient_id>/items')
 class IngredientItems(MethodView):
