@@ -26,7 +26,7 @@ Note: The project currently uses sqlite as the database. This is subject to chan
  pytest tests
 ```
 
-## Running Tests with coverage
+### Running Tests with Coverage
 ```bash
 pytest --cov=myopenpantry --cov-report html tests/
 ```
