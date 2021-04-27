@@ -3,6 +3,7 @@ attrs==20.3.0
 click==7.1.2
 coverage==5.5
 Flask==1.1.2
+Flask-Cors==3.0.10
 flask-smorest==0.29.0
 Flask-SQLAlchemy==2.4.4
 iniconfig==1.1.1
