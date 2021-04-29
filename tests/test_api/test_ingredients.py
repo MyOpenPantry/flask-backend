@@ -242,7 +242,7 @@ class TestIngredients:
         for ingredient in ingredients:
             response = client.post('/ingredients/', 
                 headers = {"Content-Type":"application/json"},
-                json = {'name':ingredient['name']}
+                json = {'name': ingredient['name']}
             )
 
             assert response.status_code == 201
@@ -312,7 +312,7 @@ class TestIngredients:
 
             response = client.post(f'/recipes/{r_id}/ingredients',
                 headers = {"Content-Type":"application/json"},
-                json = {'recipe_ingredients': [{'ingredient_id': i_id, 'amount':amount, 'unit':unit}]}
+                json = {'recipeIngredients': [{'ingredientId': i_id, 'amount': amount, 'unit': unit}]}
             )
 
             assert response.status_code == 204
@@ -322,8 +322,8 @@ class TestIngredients:
             {
                 'name':'Pineapple',
                 'amount':3,
-                'product_id':123456,
-                'ingredient_id':ingredient_info['Pineapple'][0]
+                'productId':123456,
+                'ingredientId':ingredient_info['Pineapple'][0]
             },
             {
                 'name':'No ingredient',
@@ -332,26 +332,26 @@ class TestIngredients:
             {
                 'name':'Simple Truth Black Beans',
                 'amount':4,
-                'product_id':44121212,
-                'ingredient_id':ingredient_info['Black Beans'][0]
+                'productId':44121212,
+                'ingredientId':ingredient_info['Black Beans'][0]
             },
             {
                 'name':'Walmart Black Beans',
                 'amount':4,
-                'product_id':22121212,
-                'ingredient_id':ingredient_info['Black Beans'][0]
+                'productId':22121212,
+                'ingredientId':ingredient_info['Black Beans'][0]
             },
             {
                 'name':'Rice',
                 'amount':1,
-                'product_id':777,
-                'ingredient_id':ingredient_info['Rice'][0]
+                'productId':777,
+                'ingredientId':ingredient_info['Rice'][0]
             },
             {
                 'name':'Tomato',
                 'amount':6,
-                'product_id':111222333,
-                'ingredient_id':ingredient_info['Tomato'][0]
+                'productId':111222333,
+                'ingredientId':ingredient_info['Tomato'][0]
             },
         ]
 
@@ -371,13 +371,13 @@ class TestIngredients:
             [{"names":['Bean', 'Tomato']}, {'code': 200, 'len':3}],
             [{"names":['Tomato']}, {'code': 200, 'len':1}],
             [{"names":[]}, {'code': 422}],
-            [{"recipe_ids":[recipe_ids['Chicken Salad'], recipe_ids['Black Bean Pineapple Salsa']]}, {'code': 200, 'len':4}],
-            [{"recipe_ids":[recipe_ids['Red Beans and Rice']]}, {'code': 200, 'len':1}],
-            [{"recipe_ids":[]}, {'code': 422}],
-            [{"item_ids":[item_ids['Pineapple']]}, {'code': 200, 'len':1}],
-            [{"item_ids":[item_ids['No ingredient']]}, {'code': 200, 'len':0}],
-            [{"item_ids":[item_ids['Simple Truth Black Beans'], item_ids['Walmart Black Beans']]}, {'code': 200, 'len':1}],
-            [{"item_ids":[]}, {'code': 422}],
+            [{"recipeIds":[recipe_ids['Chicken Salad'], recipe_ids['Black Bean Pineapple Salsa']]}, {'code': 200, 'len':4}],
+            [{"recipeIds":[recipe_ids['Red Beans and Rice']]}, {'code': 200, 'len':1}],
+            [{"recipeIds":[]}, {'code': 422}],
+            [{"itemIds":[item_ids['Pineapple']]}, {'code': 200, 'len':1}],
+            [{"itemIds":[item_ids['No ingredient']]}, {'code': 200, 'len':0}],
+            [{"itemIds":[item_ids['Simple Truth Black Beans'], item_ids['Walmart Black Beans']]}, {'code': 200, 'len':1}],
+            [{"itemIds":[]}, {'code': 422}],
         ]
 
         for query, resp in query_resp:

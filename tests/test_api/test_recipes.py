@@ -339,7 +339,7 @@ class TestRecipes:
         for r_name, t_name in associations:
             t_id, t_etag = tag_info[t_name]
 
-            r_ids = {'recipe_ids': [recipe_ids[r_name]]}
+            r_ids = {'recipeIds': [recipe_ids[r_name]]}
 
             response = client.post(f'/tags/{t_id}/recipes', 
                 headers = {"Content-Type":"application/json"},
@@ -396,7 +396,7 @@ class TestRecipes:
 
             response = client.post(f'/recipes/{r_id}/ingredients',
                 headers = {"Content-Type":"application/json"},
-                json = {'recipe_ingredients': [{'ingredient_id': i_id, 'amount':amount, 'unit':unit}]}
+                json = {'recipeIngredients': [{'ingredientId': i_id, 'amount':amount, 'unit':unit}]}
             )
 
             assert response.status_code == 204
@@ -426,7 +426,7 @@ class TestRecipes:
 
         assert len(response.json) == 2
 
-        query = {'tag_ids':[tag_info['creole'][0], tag_info['vegetarian'][0]]}
+        query = {'tagIds':[tag_info['creole'][0], tag_info['vegetarian'][0]]}
         response = client.get('recipes/',
             headers = {'Content-Type':'application/json'},
             json = query
@@ -434,7 +434,7 @@ class TestRecipes:
 
         assert len(response.json) == 4
 
-        query = {'tag_ids':[tag_info['creole'][0], tag_info['vegetarian'][0]]}
+        query = {'tagIds':[tag_info['creole'][0], tag_info['vegetarian'][0]]}
         response = client.get('recipes/',
             headers = {'Content-Type':'application/json'},
             json = query
@@ -442,7 +442,7 @@ class TestRecipes:
 
         assert len(response.json) == 4
 
-        query = {'tag_ids':[]}
+        query = {'tagIds':[]}
         response = client.get('recipes/',
             headers = {'Content-Type':'application/json'},
             json = query
@@ -450,7 +450,7 @@ class TestRecipes:
 
         assert response.status_code == 422
 
-        query = {'ingredient_ids':[ingredient_info['Black Beans'][0], ingredient_info['Tomato'][0]]}
+        query = {'ingredientIds':[ingredient_info['Black Beans'][0], ingredient_info['Tomato'][0]]}
         response = client.get('recipes/',
             headers = {'Content-Type':'application/json'},
             json = query
@@ -458,7 +458,7 @@ class TestRecipes:
 
         assert len(response.json) == 2
 
-        query = {'ingredient_ids':[ingredient_info['Not Used'][0]]}
+        query = {'ingredientIds':[ingredient_info['Not Used'][0]]}
         response = client.get('recipes/',
             headers = {'Content-Type':'application/json'},
             json = query
@@ -466,7 +466,7 @@ class TestRecipes:
 
         assert len(response.json) == 0
 
-        query = {'ingredient_ids':[]}
+        query = {'ingredientIds':[]}
         response = client.get('recipes/',
             headers = {'Content-Type':'application/json'},
             json = query

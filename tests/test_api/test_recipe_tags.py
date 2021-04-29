@@ -44,7 +44,7 @@ class TestRecipeTags:
         # add tags to the recipe from the recipe side
         response = client.post(f'recipes/{recipe_id}/tags',
             headers = {'Content-Type':'application/json'},
-            json = {'tag_ids': tag_ids[1:]}
+            json = {'tagIds': tag_ids[1:]}
         )
 
         assert response.status_code == 204
@@ -52,7 +52,7 @@ class TestRecipeTags:
         # add tags to the recipe from the tag side
         response = client.post(f'tags/{tag_ids[0]}/recipes',
             headers = {'Content-Type':'application/json'},
-            json = {'recipe_ids': [recipe_id]}
+            json = {'recipeIds': [recipe_id]}
         )
 
         assert response.status_code == 204
@@ -116,7 +116,7 @@ class TestRecipeTags:
         # add first tag to recipe from recipes/id/tags
         response = client.post(f'recipes/{recipe_id}/tags',
             headers = {'Content-Type':'application/json'},
-            json = {'tag_ids': tag_ids[1:]}
+            json = {'tagIds': tag_ids[1:]}
         )
 
         assert response.status_code == 204
@@ -124,7 +124,7 @@ class TestRecipeTags:
         # do the same with the other tag, but by adding the recipe to the tag from tags/id/recipes
         response = client.post(f'tags/{tag_ids[0]}/recipes',
             headers = {'Content-Type':'application/json'},
-            json = {'recipe_ids': [recipe_id]}
+            json = {'recipeIds': [recipe_id]}
         )
 
         assert response.status_code == 204
@@ -215,7 +215,7 @@ class TestRecipeTags:
         # invalid recipe, valid tag
         response = client.post(f'recipes/{recipe_id+1}/tags',
             headers = {'Content-Type':'application/json'},
-            json = {'tag_ids': [tag_ids[0]]}
+            json = {'tagIds': [tag_ids[0]]}
         )
 
         assert response.status_code == 404
@@ -223,7 +223,7 @@ class TestRecipeTags:
         # valid recipe, invalid tag
         response = client.post(f'recipes/{recipe_id}/tags',
             headers = {'Content-Type':'application/json'},
-            json = {'tag_ids': [tag_ids[1] + 1]}
+            json = {'tagIds': [tag_ids[1] + 1]}
         )
 
         assert response.status_code == 422
@@ -231,7 +231,7 @@ class TestRecipeTags:
         # valid tag, invalid recipe
         response = client.post(f'tags/{tag_ids[0]}/recipes',
             headers = {'Content-Type':'application/json'},
-            json = {'recipe_ids': [recipe_id + 1]}
+            json = {'recipeIds': [recipe_id + 1]}
         )
 
         assert response.status_code == 422
@@ -239,7 +239,7 @@ class TestRecipeTags:
         # invalid tag, valid recipe
         response = client.post(f'tags/{tag_ids[1] + 1}/recipes',
             headers = {'Content-Type':'application/json'},
-            json = {'recipe_ids': [recipe_id]}
+            json = {'recipeIds': [recipe_id]}
         )
 
         assert response.status_code == 404

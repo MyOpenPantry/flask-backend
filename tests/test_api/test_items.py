@@ -76,7 +76,7 @@ class TestItems:
         item = {
             'name':'Kroger Eggs',
             'amount':12,
-            'product_id':123456,
+            'productId':123456,
         }
 
         response = client.post('/items/', 
@@ -100,7 +100,7 @@ class TestItems:
         # missing name
         item = {
             'amount':0,
-            'product_id':000000,
+            'productId':000000,
         }
 
         response = client.post('/items/', 
@@ -114,8 +114,8 @@ class TestItems:
         item = {
             'name':'Mustard',
             'amount':0,
-            'product_id':000000,
-            'ingredient_id':1
+            'productId':000000,
+            'ingredientId':1
         }
 
         response = client.post('/items/', 
@@ -131,7 +131,7 @@ class TestItems:
         item = {
             'name':'Kroger Eggs',
             'amount':12,
-            'product_id':123456,
+            'productId':123456,
         }
 
         response = client.post('/items/', 
@@ -154,7 +154,7 @@ class TestItems:
         item = {
             'name':'Peanut Butter',
             'amount':1,
-            'product_id':1000239983223,
+            'productId':1000239983223,
         }
 
         response = client.post('/items/', 
@@ -165,13 +165,13 @@ class TestItems:
         assert response.status_code == 201
 
         id = response.json['id']
-        updated = response.json['updated_at']
+        updated = response.json['updatedAt']
         etag = response.headers['ETag']
 
         update_item = {
             'name':'Peanut Butter',
             'amount':2,
-            'product_id':1000239983223,
+            'productId':1000239983223,
         }
         response = client.put(f'/items/{id}',
             headers = {"If-Match": etag},
@@ -183,7 +183,7 @@ class TestItems:
         response = client.get(f'/items/{id}') 
 
         assert response.status_code == 200
-        assert dateutil.parser.parse(response.json['updated_at']) > dateutil.parser.parse(updated)
+        assert dateutil.parser.parse(response.json['updatedAt']) > dateutil.parser.parse(updated)
 
     def test_invalid_put(sel, app):
         client = app.test_client()
@@ -191,7 +191,7 @@ class TestItems:
         item = {
             'name':'Grape Jelly',
             'amount':44,
-            'product_id':1033239983223,
+            'productId':1033239983223,
         }
 
         response = client.post('/items/', 
@@ -202,7 +202,7 @@ class TestItems:
         assert response.status_code == 201
 
         id = response.json['id']
-        updated = response.json['updated_at']
+        updated = response.json['updatedAt']
         etag = response.headers['ETag']
 
         # no etag
@@ -217,8 +217,8 @@ class TestItems:
         update_item = {
             'name':'Grape Jelly',
             'amount':44,
-            'product_id':1033239983223,
-            'updated_at':'2021-03-30T14:55:30.500000'
+            'productId':1033239983223,
+            'updatedAt':'2021-03-30T14:55:30.500000'
         }
         response = client.put(f'/items/{id}',
             headers = {"If-Match": etag},
@@ -249,7 +249,7 @@ class TestItems:
 
         assert response.status_code == 422
 
-    # this also indirectly tests associations since I also want to test querying by ingredient_id
+    # this also indirectly tests associations since I also want to test querying by ingredientId
     def test_query(self, app):
         client = app.test_client()
 
@@ -279,25 +279,25 @@ class TestItems:
             {
                 'name':'Kroger Eggs',
                 'amount':12,
-                'product_id':123456,
-                'ingredient_id':ingredient_ids['eggs']
+                'productId':123456,
+                'ingredientId':ingredient_ids['eggs']
             },
             {
                 'name':'Kroger Chicken Breast',
                 'amount':11,
-                'product_id':123,
-                'ingredient_id':ingredient_ids['chicken breast']
+                'productId':123,
+                'ingredientId':ingredient_ids['chicken breast']
             },
             {
                 'name':'Costco Chicken Breast',
                 'amount':3,
-                'product_id':2323,
-                'ingredient_id':ingredient_ids['chicken breast']
+                'productId':2323,
+                'ingredientId':ingredient_ids['chicken breast']
             },
             {
                 'name':'Aldi Beef Chuck',
                 'amount':2,
-                'product_id':4444,
+                'productId':4444,
             },
             {
                 'name':'Bananas',
@@ -323,7 +323,7 @@ class TestItems:
 
         # empty product id
         search_product = {
-            'product_ids':[],
+            'productIds':[],
         }
         response = client.get('/items/',
             json = search_product
@@ -333,7 +333,7 @@ class TestItems:
 
         # single product id
         search_product = {
-            'product_ids':[123],
+            'productIds':[123],
         }
         response = client.get('/items/',
             json = search_product
@@ -341,11 +341,11 @@ class TestItems:
 
         assert response.status_code == 200
         assert len(response.json) == 1
-        assert response.json[0]['product_id'] == 123
+        assert response.json[0]['productId'] == 123
 
         # multiple product ids
         search_product = {
-            'product_ids':[123, 2323],
+            'productIds':[123, 2323],
         }
         response = client.get('/items/',
             json = search_product
@@ -356,7 +356,7 @@ class TestItems:
 
         # empty ingredient id
         search_ingredient = {
-            'ingredient_ids':[],
+            'ingredientIds':[],
         }
         response = client.get('/items/',
             json = search_ingredient
@@ -366,7 +366,7 @@ class TestItems:
 
         # single ingredient id
         search_ingredient = {
-            'ingredient_ids':[ingredient_ids['chicken breast']],
+            'ingredientIds':[ingredient_ids['chicken breast']],
         }
         response = client.get('/items/',
             json = search_ingredient
@@ -377,7 +377,7 @@ class TestItems:
 
         # non-existent ingredient id
         search_ingredient = {
-            'ingredient_ids':[len(items)+1],
+            'ingredientIds':[len(items)+1],
         }
         response = client.get('/items/',
             json = search_ingredient
@@ -424,7 +424,7 @@ class TestItems:
         item = {
             'name':'Kroger Eggs',
             'amount':12,
-            'product_id':123456,
+            'productId':123456,
         }
 
         response = client.post('/items/', 
@@ -450,7 +450,7 @@ class TestItems:
         item = {
             'name':'Kroger Eggs',
             'amount':12,
-            'product_id':123456,
+            'productId':123456,
         }
 
         response = client.post('/items/', 

@@ -272,7 +272,7 @@ class TestTags:
         for r_name, t_name in associations:
             t_id, t_etag = tag_info[t_name]
 
-            r_ids = {'recipe_ids': [recipe_ids[r_name]]}
+            r_ids = {'recipeIds': [recipe_ids[r_name]]}
 
             response = client.post(f'/tags/{t_id}/recipes', 
                 headers = {"Content-Type":"application/json"},
