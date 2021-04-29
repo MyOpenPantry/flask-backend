@@ -8,7 +8,7 @@ class TestItemIngredients:
         item1 = {
             'name':'Kroger Chicken Thighs',
             'amount':6,
-            'product_id':1111111111111,
+            'productId':1111111111111,
         }
 
         response = client.post('/items/', 
@@ -39,7 +39,7 @@ class TestItemIngredients:
         item2 = {
             'name':'Costco Chicken Thighs',
             'amount':2,
-            'product_id':2222222222222,
+            'productId':2222222222222,
         }
 
         response = client.post(f'/items/', 
@@ -50,14 +50,14 @@ class TestItemIngredients:
         assert response.status_code == 201
 
         # update the first item to use the ingredient
-        item1['ingredient_id'] = ingredient_id
+        item1['ingredientId'] = ingredient_id
         response = client.put(f'/items/{item1_id}', 
             headers = {"If-Match": item1_etag},
             json = item1,
         )
 
         assert response.status_code == 200
-        assert response.json['ingredient_id'] == ingredient_id
+        assert response.json['ingredientId'] == ingredient_id
 
         response = client.get(f'/items/{item1_id}/ingredient')
 
@@ -88,7 +88,7 @@ class TestItemIngredients:
         # add association from ingredients/id/items
         response = client.post(f'ingredients/{ingredient_id}/items',
             headers = {'Content-Type':'application/json'},
-            json = {'item_id':item3_id}
+            json = {'itemId':item3_id}
         )
 
         assert response.status_code == 204
@@ -118,8 +118,8 @@ class TestItemIngredients:
         item = {
             'name':'Asparagus',
             'amount':2,
-            'product_id':54,
-            'ingredient_id': ingredient_id
+            'productId':54,
+            'ingredientId': ingredient_id
         }
 
         response = client.post('/items/', 
@@ -133,14 +133,14 @@ class TestItemIngredients:
         etag = response.headers['ETag']
 
         # remove the ingredient association via put on items/id
-        del item['ingredient_id']
+        del item['ingredientId']
         response = client.put(f'/items/{id}',
             headers = {'If-Match': etag},
             json = item
         )
 
         assert response.status_code == 200
-        assert response.json.get('ingredient_id', None) is None
+        assert response.json.get('ingredientId', None) is None
 
         # check that the ingredient wasn't deleted
         response = client.get(f'/ingredients/{ingredient_id}')
@@ -154,14 +154,14 @@ class TestItemIngredients:
         etag = response.headers['ETag']
 
         # Add the ingredient back so deleting from items/id/ingredient can be tested
-        item['ingredient_id'] = ingredient_id
+        item['ingredientId'] = ingredient_id
         response = client.put(f'/items/{id}', 
             headers = {"If-Match": etag},
             json = item
         )
 
         assert response.status_code == 200
-        assert response.json['ingredient_id'] == ingredient_id
+        assert response.json['ingredientId'] == ingredient_id
 
         # obtain the new etag for the item
         response = client.get(f'/items/{id}')
@@ -181,8 +181,6 @@ class TestItemIngredients:
 
         assert response.status_code == 200
 
-
-
         # obtain the new etag for the item
         response = client.get(f'/items/{id}')
 
@@ -190,14 +188,14 @@ class TestItemIngredients:
         etag = response.headers['ETag']
 
         # Add the ingredient back so deleting from items/id/ingredient can be tested
-        item['ingredient_id'] = ingredient_id
+        item['ingredientId'] = ingredient_id
         response = client.put(f'/items/{id}', 
             headers = {"If-Match": etag},
             json = item
         )
 
         assert response.status_code == 200
-        assert response.json['ingredient_id'] == ingredient_id
+        assert response.json['ingredientId'] == ingredient_id
 
         # obtain the new etag for the ingredient
         response = client.get(f'/ingredients/{ingredient_id}')
@@ -231,8 +229,8 @@ class TestItemIngredients:
         item = {
             'name':'Rutabaga',
             'amount':9999,
-            'product_id':4412,
-            'ingredient_id': 1
+            'productId':4412,
+            'ingredientId': 1
         }
 
         response = client.post('/items/', 
@@ -242,8 +240,8 @@ class TestItemIngredients:
 
         assert response.status_code == 422
 
-        # remove the invalid ingredient_id so there is a real item to work with
-        del item['ingredient_id']
+        # remove the invalid ingredientId so there is a real item to work with
+        del item['ingredientId']
         response = client.post('/items/', 
             headers = {"Content-Type": "application/json"},
             json = item,
@@ -270,7 +268,7 @@ class TestItemIngredients:
         # invalid item id
         response = client.post(f'ingredients/{ingredient_id}/items',
             headers = {'Content-Type':'application/json'},
-            json = {'item_id':item_id + 1}
+            json = {'itemId':item_id + 1}
         )
 
         assert response.status_code == 422

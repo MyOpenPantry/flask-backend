@@ -104,7 +104,7 @@ class TestIngredientRecipes:
 
             response = client.post(f'/recipes/{r_id}/ingredients',
                 headers = {"Content-Type":"application/json"},
-                json = {'recipe_ingredients': [{'ingredient_id': i_id, 'amount':amount, 'unit':unit}]}
+                json = {'recipeIngredients': [{'ingredientId': i_id, 'amount':amount, 'unit':unit}]}
             )
 
             assert response.status_code == 204
@@ -233,7 +233,7 @@ class TestIngredientRecipes:
 
             response = client.post(f'/recipes/{r_id}/ingredients',
                 headers = {"Content-Type":"application/json"},
-                json = {'recipe_ingredients': [{'ingredient_id': i_id, 'amount':amount, 'unit':unit}]}
+                json = {'recipeIngredients': [{'ingredientId': i_id, 'amount': amount, 'unit': unit}]}
             )
 
             assert response.status_code == 204
@@ -251,11 +251,10 @@ class TestIngredientRecipes:
 
             response = client.post(f'/ingredients/{i_id}/recipes',
                 headers = {"Content-Type":"application/json"},
-                json = {'recipe_ingredients': [{'recipe_id': r_id, 'amount':amount, 'unit':unit}]}
+                json = {'recipeIngredients': [{'recipeId': r_id, 'amount': amount, 'unit': unit}]}
             )
 
             assert response.status_code == 204
-
 
     def test_unlink(self, app):
         client = app.test_client()
@@ -359,7 +358,7 @@ class TestIngredientRecipes:
 
             response = client.post(f'/recipes/{r_id}/ingredients',
                 headers = {"Content-Type":"application/json"},
-                json = {'recipe_ingredients': [{'ingredient_id': i_id, 'amount':amount, 'unit':unit}]}
+                json = {'recipeIngredients': [{'ingredientId': i_id, 'amount': amount, 'unit': unit}]}
             )
 
             assert response.status_code == 204
