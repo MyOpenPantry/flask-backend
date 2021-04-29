@@ -1,3 +1,5 @@
+[![test](https://github.com/MyOpenPantry/flask-backend/actions/workflows/test.yml/badge.svg?event=push)](https://github.com/MyOpenPantry/flask-backend/actions/workflows/test.yml)
+
 # flask-backend
 Flask prototyping backend for the MyOpenPantry project. Powered by [flask-smorest](https://flask-smorest.readthedocs.io/en/latest/).
 
