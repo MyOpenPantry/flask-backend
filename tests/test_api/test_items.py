@@ -321,55 +321,44 @@ class TestItems:
         assert response.status_code == 200
         assert len(response.json) == len(items)
 
-        # empty product id
+        # invalid product id
         search_product = {
-            'productIds':[],
+            'productId':-1,
         }
         response = client.get('/items/',
-            json = search_product
+            query_string = {'productId':-1}
         )
 
         assert response.status_code == 422
 
         # single product id
         search_product = {
-            'productIds':[123],
+            'productId':123,
         }
         response = client.get('/items/',
-            json = search_product
+            query_string = {'productId':123}
         )
 
         assert response.status_code == 200
         assert len(response.json) == 1
         assert response.json[0]['productId'] == 123
 
-        # multiple product ids
-        search_product = {
-            'productIds':[123, 2323],
-        }
-        response = client.get('/items/',
-            json = search_product
-        )
-
-        assert response.status_code == 200
-        assert len(response.json) == 2
-
-        # empty ingredient id
+        # invalid ingredient id
         search_ingredient = {
-            'ingredientIds':[],
+            'ingredientId':-1,
         }
         response = client.get('/items/',
-            json = search_ingredient
+            query_string = search_ingredient
         )
 
         assert response.status_code == 422
 
-        # single ingredient id
+        # valid ingredient id
         search_ingredient = {
-            'ingredientIds':[ingredient_ids['chicken breast']],
+            'ingredientId':ingredient_ids['chicken breast'],
         }
         response = client.get('/items/',
-            json = search_ingredient
+            query_string = search_ingredient
         )
 
         assert response.status_code == 200
@@ -377,10 +366,10 @@ class TestItems:
 
         # non-existent ingredient id
         search_ingredient = {
-            'ingredientIds':[len(items)+1],
+            'ingredientId':[len(items)+1],
         }
         response = client.get('/items/',
-            json = search_ingredient
+            query_string = search_ingredient
         )
 
         assert response.status_code == 200
@@ -388,35 +377,35 @@ class TestItems:
 
         # empty name
         search_name = {
-            'names':[]
+            'name':''
         }
         response = client.get('/items/',
-            json = search_name
+            query_string = search_name
         )
 
         assert response.status_code == 422
 
-        # single name
+        # valid name
         search_name = {
-            'names':['Kroger']
+            'name':'Kroger'
         }
         response = client.get('/items/',
-            json = search_name
+            query_string = search_name
         )
 
         assert response.status_code == 200
         assert len(response.json) == 2
 
-        # multiple names
+        # non-existent name
         search_name = {
-            'names':['Kroger', 'Chicken']
+            'name':'Winco'
         }
         response = client.get('/items/',
-            json = search_name
+            query_string = search_name
         )
 
         assert response.status_code == 200
-        assert len(response.json) == 3
+        assert len(response.json) == 0
 
     def test_delete(self, app):
         client = app.test_client()

@@ -1,7 +1,7 @@
 from flask.views import MethodView
 from flask_smorest import abort
-
-from sqlalchemy import or_
+import sys
+from sqlalchemy import exc
 
 from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
@@ -17,31 +17,42 @@ blp = Blueprint(
     description="Operations on items"
 )
 
+# Trying to stay consistent with other error stuctures, eg: 
+#"errors": {
+#  "json": {
+#    "ingredientId": [
+#      "Must be greater than or equal to 0."
+#    ]
+#  }
+#}, 
+def handle_integrity_error_and_abort(e):
+    # TODO surely there is a better way to figure out what the error type is?
+    e = repr(e)
+    errors = {'json':{}}
+    if e.find('UNIQUE constraint failed: items.name'):
+        errors['json']['name'] = ["Item with that name already exists"]
+    if e.find('UNIQUE constraint failed: items.product_id'):
+        errors['json']['productId'] = ["Item with that product ID already exists"]
+    if e.find('FOREIGN KEY constraint failed'):
+        errors['json']['ingredientId'] = ["No such ingredient with that id"]
+
+    abort(422, errors=errors)
+
 @blp.route('/')
 class Items(MethodView):
 
     @blp.etag
-    @blp.arguments(ItemQueryArgsSchema)
+    @blp.arguments(ItemQueryArgsSchema, location='query')
     @blp.response(200, ItemSchema(many=True))
     @blp.paginate(SQLCursorPage)
     def get(self, args):
         """List all items or filter by args"""
-        names = args.pop('names', None)
-        ingredient_ids = args.pop('ingredient_ids', None)
-        product_ids = args.pop('product_ids', None)
+        name = args.pop('name', None)
 
         ret = Item.query.filter_by(**args)
 
-        # TODO does marshmallow have a way to only allow one of these at a time?
-        # product_id > ingredient_id > name for search order
-        if product_ids is not None:
-            ret = ret.filter(Item.product_id.in_(product_ids))
-        elif ingredient_ids is not None:
-            ret = ret.filter(Item.ingredient_id.in_(ingredient_ids))
-        elif names is not None:
-            # TODO SQLite does not have "ANY"
-            # ret = ret.filter(Item.name.like(any_([f"%{name}%" for name in names])))
-            ret = ret.filter(or_(Item.name.like(f"%{name}%") for name in names))
+        if name is not None:
+            ret = ret.filter(Item.name.like(f"%{name}%"))
 
         return ret.order_by(Item.id)
 
@@ -55,10 +66,13 @@ class Items(MethodView):
         try:
             db.session.add(item)
             db.session.commit()
+        except exc.IntegrityError as e:
+            db.session.rollback()
+            handle_integrity_error_and_abort(e)
         except:
             db.session.rollback()
-            # TODO be more descriptive and log
-            abort(422)
+            # TODO check that Foreign Key failing is the only IntegrityError possible here? 
+            abort(422, message="There was an error. Please try again.")
 
         return item
 
@@ -85,10 +99,13 @@ class ItemsById(MethodView):
         try:
             db.session.add(item)
             db.session.commit()
+        except exc.IntegrityError as e:
+            db.session.rollback()
+            handle_integrity_error_and_abort(e)
         except:
             db.session.rollback()
-            # TODO be more descriptive and log
-            abort(422)
+            # TODO check that Foreign Key failing is the only IntegrityError possible here? 
+            abort(422, message="There was an error. Please try again.")
 
         return item
 
