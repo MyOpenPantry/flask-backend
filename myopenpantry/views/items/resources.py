@@ -29,11 +29,11 @@ def handle_integrity_error_and_abort(e):
     # TODO surely there is a better way to figure out what the error type is?
     e = repr(e)
     errors = {'json':{}}
-    if e.find('UNIQUE constraint failed: items.name'):
+    if e.find('UNIQUE constraint failed: items.name') != -1:
         errors['json']['name'] = ["Item with that name already exists"]
-    if e.find('UNIQUE constraint failed: items.product_id'):
+    if e.find('UNIQUE constraint failed: items.product_id') != -1:
         errors['json']['productId'] = ["Item with that product ID already exists"]
-    if e.find('FOREIGN KEY constraint failed'):
+    if e.find('FOREIGN KEY constraint failed') != -1:
         errors['json']['ingredientId'] = ["No such ingredient with that id"]
 
     abort(422, errors=errors)
