@@ -1,6 +1,6 @@
 import sqlalchemy as sa
-from sqlalchemy.orm import relationship
 from myopenpantry.extensions.database import db
+
 
 # classify a recipe for keyword searches, eg "chicken", "french", "quick"
 class Tag(db.Model):

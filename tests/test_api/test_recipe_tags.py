@@ -1,29 +1,29 @@
-import pytest, json
 
 class TestRecipeTags:
     def test_link_get(self, app):
         client = app.test_client()
 
         recipe = {
-            'name':'Arugula Salad',
+            'name': 'Arugula Salad',
             'steps': 'add all ingredients to bowl and toss'
         }
 
         tags = [
             {
-                'name':'arugula'
+                'name': 'arugula'
             },
             {
-                'name':'vegetarian'
+                'name': 'vegetarian'
             },
             {
-                'name':'salad'
+                'name': 'salad'
             }
         ]
 
-        response = client.post('recipes/',
-            headers = {'Content-Type':'application/json'},
-            json = recipe
+        response = client.post(
+            'recipes/',
+            headers={'Content-Type': 'application/json'},
+            json=recipe
         )
 
         assert response.status_code == 201
@@ -32,9 +32,10 @@ class TestRecipeTags:
 
         tag_ids = []
         for tag in tags:
-            response = client.post('tags/',
-                headers = {'Content-Type':'application/json'},
-                json = tag
+            response = client.post(
+                'tags/',
+                headers={'Content-Type': 'application/json'},
+                json=tag
             )
 
             assert response.status_code == 201
@@ -42,17 +43,19 @@ class TestRecipeTags:
             tag_ids.append(response.json['id'])
 
         # add tags to the recipe from the recipe side
-        response = client.post(f'recipes/{recipe_id}/tags',
-            headers = {'Content-Type':'application/json'},
-            json = {'tagIds': tag_ids[1:]}
+        response = client.post(
+            f'recipes/{recipe_id}/tags',
+            headers={'Content-Type': 'application/json'},
+            json={'tagIds': tag_ids[1:]}
         )
 
         assert response.status_code == 204
 
         # add tags to the recipe from the tag side
-        response = client.post(f'tags/{tag_ids[0]}/recipes',
-            headers = {'Content-Type':'application/json'},
-            json = {'recipeIds': [recipe_id]}
+        response = client.post(
+            f'tags/{tag_ids[0]}/recipes',
+            headers={'Content-Type': 'application/json'},
+            json={'recipeIds': [recipe_id]}
         )
 
         assert response.status_code == 204
@@ -74,25 +77,26 @@ class TestRecipeTags:
         client = app.test_client()
 
         recipe = {
-            'name':'Arugula Salad',
+            'name': 'Arugula Salad',
             'steps': 'add all ingredients to bowl and toss'
         }
 
         tags = [
             {
-                'name':'arugula'
+                'name': 'arugula'
             },
             {
-                'name':'vegetarian'
+                'name': 'vegetarian'
             },
             {
-                'name':'salad'
+                'name': 'salad'
             }
         ]
 
-        response = client.post('recipes/',
-            headers = {'Content-Type':'application/json'},
-            json = recipe
+        response = client.post(
+            'recipes/',
+            headers={'Content-Type': 'application/json'},
+            json=recipe
         )
 
         assert response.status_code == 201
@@ -103,9 +107,10 @@ class TestRecipeTags:
         tag_ids = []
         tag_etags = []
         for tag in tags:
-            response = client.post('tags/',
-                headers = {'Content-Type':'application/json'},
-                json = tag
+            response = client.post(
+                'tags/',
+                headers={'Content-Type': 'application/json'},
+                json=tag
             )
 
             assert response.status_code == 201
@@ -114,17 +119,19 @@ class TestRecipeTags:
             tag_etags.append(response.headers['ETag'])
 
         # add first tag to recipe from recipes/id/tags
-        response = client.post(f'recipes/{recipe_id}/tags',
-            headers = {'Content-Type':'application/json'},
-            json = {'tagIds': tag_ids[1:]}
+        response = client.post(
+            f'recipes/{recipe_id}/tags',
+            headers={'Content-Type': 'application/json'},
+            json={'tagIds': tag_ids[1:]}
         )
 
         assert response.status_code == 204
 
         # do the same with the other tag, but by adding the recipe to the tag from tags/id/recipes
-        response = client.post(f'tags/{tag_ids[0]}/recipes',
-            headers = {'Content-Type':'application/json'},
-            json = {'recipeIds': [recipe_id]}
+        response = client.post(
+            f'tags/{tag_ids[0]}/recipes',
+            headers={'Content-Type': 'application/json'},
+            json={'recipeIds': [recipe_id]}
         )
 
         assert response.status_code == 204
@@ -136,22 +143,25 @@ class TestRecipeTags:
         assert len(response.json) == len(tags)
 
         # delete the first tag from recipes/id/tags
-        response = client.delete(f'recipes/{recipe_id}/tags/{tag_ids[0]}',
-            headers = {'If-Match': recipe_etag},
+        response = client.delete(
+            f'recipes/{recipe_id}/tags/{tag_ids[0]}',
+            headers={'If-Match': recipe_etag},
         )
 
         assert response.status_code == 204
 
         # try deleting the now invalid tag again (for code coverage)
-        response = client.delete(f'recipes/{recipe_id}/tags/{tag_ids[0]}',
-            headers = {'If-Match': recipe_etag},
+        response = client.delete(
+            f'recipes/{recipe_id}/tags/{tag_ids[0]}',
+            headers={'If-Match': recipe_etag},
         )
 
         assert response.status_code == 422
 
         # test deleting an invalid tag (for code coverage)
-        response = client.delete(f'tags/{tag_ids[0]}/recipes/{recipe_id}',
-            headers = {'If-Match': tag_etags[0]},
+        response = client.delete(
+            f'tags/{tag_ids[0]}/recipes/{recipe_id}',
+            headers={'If-Match': tag_etags[0]},
         )
 
         assert response.status_code == 422
@@ -162,8 +172,9 @@ class TestRecipeTags:
         assert len(response.json) == 2
 
         # delete the second tag from tags/id/recipes
-        response = client.delete(f'tags/{tag_ids[1]}/recipes/{recipe_id}',
-            headers = {'If-Match': tag_etags[1]},
+        response = client.delete(
+            f'tags/{tag_ids[1]}/recipes/{recipe_id}',
+            headers={'If-Match': tag_etags[1]},
         )
 
         assert response.status_code == 204
@@ -179,22 +190,23 @@ class TestRecipeTags:
         client = app.test_client()
 
         recipe = {
-            'name':'Arugula Salad',
+            'name': 'Arugula Salad',
             'steps': 'add all ingredients to bowl and toss'
         }
 
         tags = [
             {
-                'name':'arugula'
+                'name': 'arugula'
             },
             {
-                'name':'vegetarian'
+                'name': 'vegetarian'
             },
         ]
 
-        response = client.post('recipes/',
-            headers = {'Content-Type':'application/json'},
-            json = recipe
+        response = client.post(
+            'recipes/',
+            headers={'Content-Type': 'application/json'},
+            json=recipe
         )
 
         assert response.status_code == 201
@@ -203,9 +215,10 @@ class TestRecipeTags:
 
         tag_ids = []
         for tag in tags:
-            response = client.post('tags/',
-                headers = {'Content-Type':'application/json'},
-                json = tag
+            response = client.post(
+                'tags/',
+                headers={'Content-Type': 'application/json'},
+                json=tag
             )
 
             assert response.status_code == 201
@@ -213,33 +226,37 @@ class TestRecipeTags:
             tag_ids.append(response.json['id'])
 
         # invalid recipe, valid tag
-        response = client.post(f'recipes/{recipe_id+1}/tags',
-            headers = {'Content-Type':'application/json'},
-            json = {'tagIds': [tag_ids[0]]}
+        response = client.post(
+            f'recipes/{recipe_id+1}/tags',
+            headers={'Content-Type': 'application/json'},
+            json={'tagIds': [tag_ids[0]]}
         )
 
         assert response.status_code == 404
 
         # valid recipe, invalid tag
-        response = client.post(f'recipes/{recipe_id}/tags',
-            headers = {'Content-Type':'application/json'},
-            json = {'tagIds': [tag_ids[1] + 1]}
+        response = client.post(
+            f'recipes/{recipe_id}/tags',
+            headers={'Content-Type': 'application/json'},
+            json={'tagIds': [tag_ids[1] + 1]}
         )
 
         assert response.status_code == 422
 
         # valid tag, invalid recipe
-        response = client.post(f'tags/{tag_ids[0]}/recipes',
-            headers = {'Content-Type':'application/json'},
-            json = {'recipeIds': [recipe_id + 1]}
+        response = client.post(
+            f'tags/{tag_ids[0]}/recipes',
+            headers={'Content-Type': 'application/json'},
+            json={'recipeIds': [recipe_id + 1]}
         )
 
         assert response.status_code == 422
 
         # invalid tag, valid recipe
-        response = client.post(f'tags/{tag_ids[1] + 1}/recipes',
-            headers = {'Content-Type':'application/json'},
-            json = {'recipeIds': [recipe_id]}
+        response = client.post(
+            f'tags/{tag_ids[1] + 1}/recipes',
+            headers={'Content-Type': 'application/json'},
+            json={'recipeIds': [recipe_id]}
         )
 
         assert response.status_code == 404
@@ -248,22 +265,23 @@ class TestRecipeTags:
         client = app.test_client()
 
         recipe = {
-            'name':'Arugula Salad',
+            'name': 'Arugula Salad',
             'steps': 'add all ingredients to bowl and toss'
         }
 
         tags = [
             {
-                'name':'arugula'
+                'name': 'arugula'
             },
             {
-                'name':'vegetarian'
+                'name': 'vegetarian'
             },
         ]
 
-        response = client.post('recipes/',
-            headers = {'Content-Type':'application/json'},
-            json = recipe
+        response = client.post(
+            'recipes/',
+            headers={'Content-Type': 'application/json'},
+            json=recipe
         )
 
         assert response.status_code == 201
@@ -272,9 +290,10 @@ class TestRecipeTags:
 
         tag_ids = []
         for tag in tags:
-            response = client.post('tags/',
-                headers = {'Content-Type':'application/json'},
-                json = tag
+            response = client.post(
+                'tags/',
+                headers={'Content-Type': 'application/json'},
+                json=tag
             )
 
             assert response.status_code == 201
@@ -288,7 +307,7 @@ class TestRecipeTags:
         assert len(response.json) == 0
 
         for tag_id in tag_ids:
-            response2 = client.get(f'tags/{tag_id}/recipes')
+            response = client.get(f'tags/{tag_id}/recipes')
 
             assert response.status_code == 200
             assert len(response.json) == 0

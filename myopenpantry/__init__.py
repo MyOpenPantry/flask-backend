@@ -6,6 +6,7 @@ import logging
 from myopenpantry.config import app_config
 from myopenpantry import extensions, views
 
+
 def create_app(config_name):
     app = Flask(__name__)
 
@@ -18,8 +19,8 @@ def create_app(config_name):
     views.register_blueprints(api)
 
     logging.basicConfig(
-        filename=f'logs/{datetime.date(datetime.now()).isoformat()}.log', 
-        level=logging.DEBUG, format=f'%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s'
+        filename=f'logs/{datetime.date(datetime.now()).isoformat()}.log',
+        level=logging.DEBUG, format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s'
     )
 
     return app

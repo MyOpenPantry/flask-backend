@@ -1,15 +1,17 @@
 from flask.views import MethodView
 from flask_smorest import abort
 
-from sqlalchemy import or_, and_
+from sqlalchemy import and_, exc
 
 from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
 from myopenpantry.models import Recipe, Ingredient, Item, RecipeIngredient
 
-from .schemas import IngredientSchema, IngredientQueryArgsSchema, IngredientItemsSchema, BulkIngredientRecipesSchema, IngredientRecipesSchema
+from .schemas import (
+    IngredientSchema, IngredientQueryArgsSchema, IngredientItemsSchema,
+    BulkIngredientRecipesSchema, IngredientRecipesSchema
+)
 from ..items.schemas import ItemSchema
-from ..recipes.schemas import RecipeSchema 
 
 blp = Blueprint(
     'Ingredients',
@@ -18,31 +20,46 @@ blp = Blueprint(
     description="Operations on ingredients"
 )
 
+
+# TODO this is duplicated in each view. Create a controller to move all backend logic to
+# Trying to stay consistent with other error stuctures, eg:
+# "errors": {
+#   "json": {
+#     "ingredientId": [
+#       "Must be greater than or equal to 0."
+#     ]
+#   }
+# }, which is returned when by the Schema validation
+def handle_integrity_error_and_abort(e):
+    # TODO surely there is a better way to figure out what the error type is?
+    # TODO log the error
+    e = repr(e)
+    errors = {'json': {}}
+    if e.find('UNIQUE constraint failed: items.name') != -1:
+        errors['json']['name'] = ["Item with that name already exists"]
+    elif e.find('UNIQUE constraint failed: items.product_id') != -1:
+        errors['json']['productId'] = ["Item with that product ID already exists"]
+    elif e.find('FOREIGN KEY constraint failed') != -1:
+        errors['json']['ingredientId'] = ["No such ingredient with that id"]
+
+    abort(422, errors=errors)
+
+
 @blp.route('/')
 class Ingredients(MethodView):
 
     @blp.etag
-    @blp.arguments(IngredientQueryArgsSchema)
+    @blp.arguments(IngredientQueryArgsSchema, location='query')
     @blp.response(200, IngredientSchema(many=True))
     @blp.paginate(SQLCursorPage)
     def get(self, args):
         """List all ingredients or filter by args"""
-        recipe_ids = args.pop('recipe_ids', None)
-        item_ids = args.pop('item_ids', None)
-        names = args.pop('names', None)
+        name = args.pop('name', None)
 
         ret = Ingredient.query.filter_by(**args)
 
-        # TODO is filtering by recipe_id and item_id redundant when items/{id}/ingredient and recipes/{id}/ingredients exists?
-
-        # TODO does marshmallow have a way to only allow one of these at a time?
-        # recipe_id > item_id > name for search order
-        if recipe_ids is not None:
-            ret = ret.join(RecipeIngredient, Ingredient.recipes).filter(or_(RecipeIngredient.recipe_id == id for id in recipe_ids))
-        elif item_ids is not None:
-            ret = ret.join(Item, Ingredient.items).filter(or_(Item.id == id for id in item_ids))
-        elif names is not None:
-            ret = ret.filter(or_(Ingredient.name.like(f"%{name}%") for name in names))
+        if name is not None:
+            ret = ret.filter(Ingredient.name.like(f"%{name}%"))
 
         return ret.order_by(Ingredient.id)
 
@@ -56,12 +73,14 @@ class Ingredients(MethodView):
         try:
             db.session.add(ingredient)
             db.session.commit()
-        except:
+        except exc.IntegrityError as e:
             db.session.rollback()
-            # TODO be more descriptive and log
-            abort(422)
-
+            handle_integrity_error_and_abort(e)
+        except exc.DatabaseError:
+            db.session.rollback()
+            abort(422, message="There was an error. Please try again.")
         return ingredient
+
 
 @blp.route('/<int:ingredient_id>')
 class IngredientsById(MethodView):
@@ -86,10 +105,12 @@ class IngredientsById(MethodView):
         try:
             db.session.add(ingredient)
             db.session.commit()
-        except:
+        except exc.IntegrityError as e:
             db.session.rollback()
-            # TODO be more descriptive and log
-            abort(422)
+            handle_integrity_error_and_abort(e)
+        except exc.DatabaseError:
+            db.session.rollback()
+            abort(422, message="There was an error. Please try again.")
         return ingredient
 
     @blp.etag
@@ -103,7 +124,7 @@ class IngredientsById(MethodView):
         try:
             db.session.delete(ingredient)
             db.session.commit()
-        except:
+        except exc.DatabaseError:
             db.session.rollback()
             abort(422)
 
@@ -126,6 +147,8 @@ class IngredientRecipes(MethodView):
 
         recipe_ingredients = args.pop('recipe_ingredients', None)
         for recipe_ingredient in recipe_ingredients:
+            # use .get() instead of .get_or_404(),
+            # because we want to return 422 if recipe_id doesn't exist since recipe_id is not passed in the URL
             recipe = Recipe.query.get(recipe_ingredient['recipe_id'])
 
             if recipe is None:
@@ -145,9 +168,10 @@ class IngredientRecipes(MethodView):
             db.session.add(recipe)
             db.session.add(association)
             db.session.commit()
-        except:
+        except exc.DatabaseError:
             db.session.rollback()
             abort(422)
+
 
 @blp.route('/<int:ingredient_id>/recipes/<int:recipe_id>')
 class IngredientRecipesDelete(MethodView):
@@ -157,10 +181,12 @@ class IngredientRecipesDelete(MethodView):
     def delete(self, ingredient_id, recipe_id):
         """Delete association between a recipe and ingredient"""
         ingredient = Ingredient.query.get_or_404(ingredient_id)
-        recipe = Recipe.query.get_or_404(recipe_id)
+        recipe = Recipe.query.get_or_404(recipe_id) # noqa
 
         # TODO would a join be better here?
-        association = RecipeIngredient.query.filter(and_(RecipeIngredient.recipe_id == recipe_id, RecipeIngredient.ingredient_id == ingredient_id)).first()
+        association = RecipeIngredient.query.filter(
+            and_(RecipeIngredient.recipe_id == recipe_id, RecipeIngredient.ingredient_id == ingredient_id)
+        ).first()
 
         if association is None:
             abort(422)
@@ -169,12 +195,7 @@ class IngredientRecipesDelete(MethodView):
 
         db.session.delete(association)
         db.session.commit()
-        #try:
-        #    #db.session.delete(association)
-        #    db.session.commit()
-        #except:
-        #    db.session.rollback()
-        #    abort(422)
+
 
 @blp.route('/<int:ingredient_id>/items')
 class IngredientItems(MethodView):
@@ -203,9 +224,10 @@ class IngredientItems(MethodView):
         try:
             db.session.add(ingredient)
             db.session.commit()
-        except:
+        except exc.DatabaseError:
             db.session.rollback()
             abort(422)
+
 
 @blp.route('/<int:ingredient_id>/items/<int:item_id>')
 class IngredientItemsDelete(MethodView):
@@ -228,6 +250,6 @@ class IngredientItemsDelete(MethodView):
         try:
             db.session.add(ingredient)
             db.session.commit()
-        except:
+        except exc.DatabaseError:
             db.session.rollback()
             abort(422)

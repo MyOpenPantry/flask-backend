@@ -13,16 +13,20 @@ class Config(object):
     DEBUG = False
     TESTING = False
 
+
 class ProductionConfig(Config):
     pass
 
+
 class DevelopmentConfig(Config):
     DEBUG = True
+
 
 class TestingConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     TESTING = True
     DEBUG = True
+
 
 app_config = {
     'development': DevelopmentConfig,

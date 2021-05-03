@@ -1,11 +1,10 @@
 from flask.views import MethodView
 from flask_smorest import abort
-import sys
 from sqlalchemy import exc
 
 from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
-from myopenpantry.models import Item, Ingredient
+from myopenpantry.models import Item
 
 from .schemas import ItemSchema, ItemQueryArgsSchema
 from ..ingredients.schemas import IngredientSchema
@@ -17,26 +16,29 @@ blp = Blueprint(
     description="Operations on items"
 )
 
-# Trying to stay consistent with other error stuctures, eg: 
-#"errors": {
-#  "json": {
-#    "ingredientId": [
-#      "Must be greater than or equal to 0."
-#    ]
-#  }
-#}, 
+
+# TODO this is duplicated in each view. Create a controller to move all backend logic to
+# Trying to stay consistent with other error stuctures, eg:
+# "errors": {
+#   "json": {
+#     "ingredientId": [
+#       "Must be greater than or equal to 0."
+#     ]
+#   }
+# }, which is returned when by the Schema validation
 def handle_integrity_error_and_abort(e):
     # TODO surely there is a better way to figure out what the error type is?
     e = repr(e)
-    errors = {'json':{}}
+    errors = {'json': {}}
     if e.find('UNIQUE constraint failed: items.name') != -1:
         errors['json']['name'] = ["Item with that name already exists"]
-    if e.find('UNIQUE constraint failed: items.product_id') != -1:
+    elif e.find('UNIQUE constraint failed: items.product_id') != -1:
         errors['json']['productId'] = ["Item with that product ID already exists"]
-    if e.find('FOREIGN KEY constraint failed') != -1:
+    elif e.find('FOREIGN KEY constraint failed') != -1:
         errors['json']['ingredientId'] = ["No such ingredient with that id"]
 
     abort(422, errors=errors)
+
 
 @blp.route('/')
 class Items(MethodView):
@@ -69,12 +71,13 @@ class Items(MethodView):
         except exc.IntegrityError as e:
             db.session.rollback()
             handle_integrity_error_and_abort(e)
-        except:
+        except exc.DatabaseError:
             db.session.rollback()
-            # TODO check that Foreign Key failing is the only IntegrityError possible here? 
+            # TODO status code 500 here?
             abort(422, message="There was an error. Please try again.")
 
         return item
+
 
 @blp.route('/<int:item_id>')
 class ItemsById(MethodView):
@@ -102,9 +105,8 @@ class ItemsById(MethodView):
         except exc.IntegrityError as e:
             db.session.rollback()
             handle_integrity_error_and_abort(e)
-        except:
+        except exc.DatabaseError:
             db.session.rollback()
-            # TODO check that Foreign Key failing is the only IntegrityError possible here? 
             abort(422, message="There was an error. Please try again.")
 
         return item
@@ -120,9 +122,10 @@ class ItemsById(MethodView):
         try:
             db.session.delete(item)
             db.session.commit()
-        except:
+        except exc.DatabaseError:
             db.session.rollback()
             abort(422)
+
 
 @blp.route('/<int:item_id>/ingredient')
 class ItemsIngredient(MethodView):
@@ -146,6 +149,6 @@ class ItemsIngredient(MethodView):
         try:
             db.session.add(item)
             db.session.commit()
-        except:
+        except exc.DatabaseError:
             db.session.rollback()
             abort(422)
