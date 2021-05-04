@@ -7,12 +7,14 @@ from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 
 from flask_smorest import Api as ApiOrig, Blueprint as BlueprintOrig, Page
 
+
 class Blueprint(BlueprintOrig):
     """Blueprint override"""
 
 # Define custom converter to schema function
 # def customconverter2paramschema(converter):
 #     return {'type': 'custom_type', 'format': 'custom_format'}
+
 
 class Api(ApiOrig):
     """Api override"""
@@ -26,16 +28,19 @@ class Api(ApiOrig):
         # Register custom Flask url parameter converters
         # api.register_converter(CustomConverter, customconverter2paramschema)
 
+
 # from marshmallow docs for camel casing keys
 def camelcase(s):
     parts = iter(s.split("_"))
     return next(parts) + "".join(i.title() for i in parts)
+
 
 class Schema(ma.Schema):
     """Schema override"""
 
     def on_bind_field(self, field_name, field_obj):
         field_obj.data_key = camelcase(field_obj.data_key or field_name)
+
 
 class AutoSchema(SQLAlchemyAutoSchema):
     """SQLAlchemyAutoSchema override"""
@@ -60,6 +65,7 @@ class AutoSchema(SQLAlchemyAutoSchema):
         return {
             key: value for key, value in data.items() if value is not None
         }
+
 
 class SQLCursorPage(Page):
     """SQL cursor pager"""

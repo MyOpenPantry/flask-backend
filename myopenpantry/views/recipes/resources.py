@@ -5,9 +5,12 @@ from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
 from myopenpantry.models import Recipe, Ingredient, Tag, RecipeIngredient
 
-from sqlalchemy import or_, and_
+from sqlalchemy import and_, exc
 
-from .schemas import RecipeSchema, RecipeQueryArgsSchema, RecipeTagSchema, BulkRecipeIngredientSchema, RecipeIngredientSchema
+from .schemas import (
+    RecipeSchema, RecipeQueryArgsSchema, RecipeTagSchema,
+    BulkRecipeIngredientSchema, RecipeIngredientSchema
+)
 from ..tags.schemas import TagSchema
 
 blp = Blueprint(
@@ -17,28 +20,43 @@ blp = Blueprint(
     description="Operations on recipes"
 )
 
+
+# TODO this is duplicated in each view. Create a controller to move all backend logic to
+# Trying to stay consistent with other error stuctures, eg:
+# "errors": {
+#   "json": {
+#     "ingredientId": [
+#       "Must be greater than or equal to 0."
+#     ]
+#   }
+# }, which is returned when by the Schema validation
+def handle_integrity_error_and_abort(e):
+    # TODO surely there is a better way to figure out what the error type is?
+    # TODO log the error
+    e = repr(e)
+    errors = {'json': {}}
+    if e.find('UNIQUE constraint failed: recipes.name') != -1:
+        errors['json']['name'] = ["Recipe with that name already exists"]
+
+    abort(422, errors=errors)
+
+
 @blp.route('/')
 class Recipes(MethodView):
 
     @blp.etag
-    @blp.arguments(RecipeQueryArgsSchema)
+    @blp.arguments(RecipeQueryArgsSchema, location='query')
     @blp.response(200, RecipeSchema(many=True))
     @blp.paginate(SQLCursorPage)
     def get(self, args):
         """List all recipes or filter by args"""
-        ingredient_ids = args.pop('ingredient_ids', None)
-        tag_ids = args.pop('tag_ids', None)
-        names = args.pop('names', None)
+        name = args.pop('name', None)
 
         ret = Recipe.query.filter_by(**args)
 
         # TODO does marshmallow have a way to only allow one of these at a time?
-        if ingredient_ids is not None:
-            ret = ret.join(RecipeIngredient, Recipe.ingredients).filter(or_(RecipeIngredient.ingredient_id == id for id in ingredient_ids))
-        elif tag_ids is not None:
-            ret = ret.join(Tag, Recipe.tags).filter(or_(Tag.id == id for id in tag_ids))
-        elif names is not None:
-            ret = ret.filter(or_(Recipe.name.like(f"%{name}%") for name in names))
+        if name is not None:
+            ret = ret.filter(Recipe.name.like(f"%{name}%"))
 
         return ret.order_by(Recipe.id)
 
@@ -52,11 +70,15 @@ class Recipes(MethodView):
         try:
             db.session.add(recipe)
             db.session.commit()
-        except:
+        except exc.IntegrityError as e:
             db.session.rollback()
-            abort(422)
+            handle_integrity_error_and_abort(e)
+        except exc.DatabaseError:
+            db.session.rollback()
+            abort(422, message="There was an error. Please try again.")
 
         return recipe
+
 
 @blp.route('/<int:recipe_id>')
 class RecipesbyID(MethodView):
@@ -81,9 +103,12 @@ class RecipesbyID(MethodView):
         try:
             db.session.add(recipe)
             db.session.commit()
-        except:
+        except exc.IntegrityError as e:
             db.session.rollback()
-            abort(422)
+            handle_integrity_error_and_abort(e)
+        except exc.DatabaseError:
+            db.session.rollback()
+            abort(422, message="There was an error. Please try again.")
 
         return recipe
 
@@ -98,9 +123,10 @@ class RecipesbyID(MethodView):
         try:
             db.session.delete(recipe)
             db.session.commit()
-        except:
+        except exc.DatabaseError:
             db.session.rollback()
             abort(422)
+
 
 @blp.route('/<int:recipe_id>/tags')
 class RecipeTags(MethodView):
@@ -131,9 +157,10 @@ class RecipeTags(MethodView):
         try:
             db.session.add(recipe)
             db.session.commit()
-        except:
+        except (exc.IntegrityError, exc.DatabaseError):
             db.session.rollback()
-            abort(422)
+            abort(422, message="There was an error. Please try again.")
+
 
 @blp.route('/<int:recipe_id>/tags/<int:tag_id>')
 class RecipeTagsDelete(MethodView):
@@ -155,9 +182,10 @@ class RecipeTagsDelete(MethodView):
         try:
             db.session.add(recipe)
             db.session.commit()
-        except:
+        except exc.DatabaseError:
             db.session.rollback()
             abort(422)
+
 
 @blp.route('/<int:recipe_id>/ingredients')
 class RecipeIngredients(MethodView):
@@ -196,9 +224,10 @@ class RecipeIngredients(MethodView):
             db.session.add(recipe)
             db.session.add(association)
             db.session.commit()
-        except:
+        except (exc.IntegrityError, exc.DatabaseError):
             db.session.rollback()
-            abort(422)
+            abort(422, message="There was an error. Please try again.")
+
 
 @blp.route('/<int:recipe_id>/ingredients/<int:ingredient_id>')
 class RecipeIngredientsDelete(MethodView):
@@ -207,11 +236,13 @@ class RecipeIngredientsDelete(MethodView):
     @blp.response(204)
     def delete(self, recipe_id, ingredient_id):
         """Delete association between a recipe and ingredient"""
-        ingredient = Ingredient.query.get_or_404(ingredient_id)
+        ingredient = Ingredient.query.get_or_404(ingredient_id) # noqa
         recipe = Recipe.query.get_or_404(recipe_id)
 
         # TODO would a join be better here?
-        association = RecipeIngredient.query.filter(and_(RecipeIngredient.recipe_id == recipe_id, RecipeIngredient.ingredient_id == ingredient_id)).first()
+        association = RecipeIngredient.query.filter(
+            and_(RecipeIngredient.recipe_id == recipe_id, RecipeIngredient.ingredient_id == ingredient_id)
+        ).first()
 
         if association is None:
             abort(422)
@@ -221,6 +252,6 @@ class RecipeIngredientsDelete(MethodView):
         try:
             db.session.delete(association)
             db.session.commit()
-        except:
+        except exc.DatabaseError:
             db.session.rollback()
             abort(422)

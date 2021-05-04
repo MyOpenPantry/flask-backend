@@ -1,11 +1,11 @@
-import pytest, json
 import dateutil.parser
+
 
 class TestItems:
     def test_get_empty(self, app):
         client = app.test_client()
 
-        response = client.get('/items/')
+        response = client.get('items/')
         assert response.status_code == 200
         assert response.json == []
 
@@ -13,16 +13,17 @@ class TestItems:
         client = app.test_client()
 
         item = {
-            'name':'Pineapple',
-            'amount':2,
+            'name': 'Pineapple',
+            'amount': 2,
         }
 
-        response = client.post('/items/', 
-            headers = {"Content-Type": "application/json"},
-            json = item,
+        response = client.post(
+            'items/',
+            headers={"Content-Type": "application/json"},
+            json=item,
         )
 
-        response = client.get('/items/')
+        response = client.get('items/')
         assert response.status_code == 200
         assert len(response.json) == 1
 
@@ -30,43 +31,45 @@ class TestItems:
         client = app.test_client()
 
         item = {
-            'name':'Rice',
-            'amount':1340,
+            'name': 'Rice',
+            'amount': 1340,
         }
 
-        response = client.post('/items/', 
-            headers = {"Content-Type": "application/json"},
-            json = item,
+        response = client.post(
+            'items/',
+            headers={"Content-Type": "application/json"},
+            json=item,
         )
 
         assert response.status_code == 201
 
         id = response.json['id']
 
-        response = client.get(f'/items/{id}')
+        response = client.get(f'items/{id}')
 
         assert response.status_code == 200
-        for k,v in item.items():
+        for k, v in item.items():
             assert response.json[k] == v
 
     def test_get_invalid(self, app):
         client = app.test_client()
 
         item = {
-            'name':'Pineapple',
-            'amount':2,
+            'name': 'Pineapple',
+            'amount': 2,
         }
 
-        response = client.post('/items/', 
-            headers = {"Content-Type": "application/json"},
-            json = item,
+        response = client.post(
+            'items/',
+            headers={"Content-Type": "application/json"},
+            json=item,
         )
 
         assert response.status_code == 201
 
         id = response.json['id']
 
-        response = client.get(f'/items/{id+1}')
+        response = client.get(f'items/{id+1}')
 
         assert response.status_code == 404
 
@@ -74,92 +77,77 @@ class TestItems:
         client = app.test_client()
 
         item = {
-            'name':'Kroger Eggs',
-            'amount':12,
-            'productId':123456,
+            'name': 'Kroger Eggs',
+            'amount': 12,
+            'productId': 123456,
         }
 
-        response = client.post('/items/', 
-            headers = {"Content-Type": "application/json"},
-            json = item,
+        response = client.post(
+            'items/',
+            headers={"Content-Type": "application/json"},
+            json=item,
         )
 
         assert response.status_code == 201
 
         id = response.json['id']
 
-        response = client.get(f'/items/{id}')
+        response = client.get(f'items/{id}')
 
         assert response.status_code == 200
-        for k,v in item.items():
+        for k, v in item.items():
             assert response.json[k] == v
 
     def test_post_invalid(self, app):
         client = app.test_client()
 
         # missing name
-        item = {
-            'amount':0,
-            'productId':000000,
-        }
-
-        response = client.post('/items/', 
-            headers = {"Content-Type": "application/json"},
-            json = item,
+        item_resp = (
+            ({'amount': 0, 'productId': 000000}, 422),
+            ({
+                'name': 'Mustard',
+                'amount': 0,
+                'productId': 000000,
+                'ingredientId': 1
+            }, 422),
+            ({
+                'name': 'Kroger Eggs',
+                'amount': 12,
+                'productId': 123456,
+            }, 201),
+            ({
+                'name': 'Kroger Eggs',
+                'amount': 12,
+            }, 422),
+            ({
+                'name': 'Costco Eggs',
+                'amount': 12,
+                'productId': 123456,
+            }, 422),
         )
 
-        assert response.status_code == 422
+        for item, resp in item_resp:
+            response = client.post(
+                'items/',
+                headers={"Content-Type": "application/json"},
+                json=item,
+            )
 
-        # invalid ingredient
-        item = {
-            'name':'Mustard',
-            'amount':0,
-            'productId':000000,
-            'ingredientId':1
-        }
-
-        response = client.post('/items/', 
-            headers = {"Content-Type": "application/json"},
-            json = item,
-        )
-
-        assert response.status_code == 422
-
-    def test_post_existing(self, app):
-        client = app.test_client()
-
-        item = {
-            'name':'Kroger Eggs',
-            'amount':12,
-            'productId':123456,
-        }
-
-        response = client.post('/items/', 
-            headers = {"Content-Type": "application/json"},
-            json = item,
-        )
-
-        assert response.status_code == 201
-
-        response = client.post('/items/', 
-            headers = {"Content-Type": "application/json"},
-            json = item,
-        )
-
-        assert response.status_code == 422
+            assert response.status_code == resp
 
     def test_put(self, app):
         client = app.test_client()
 
         item = {
-            'name':'Peanut Butter',
-            'amount':1,
-            'productId':1000239983223,
+            'name': 'Peanut Butter',
+            'amount': 1,
+            'productId': 1000239983223,
         }
 
-        response = client.post('/items/', 
-            headers = {"Content-Type": "application/json"},
-            json = item,
+        response = client.post(
+            'items/',
+            headers={"Content-Type": "application/json"},
+            json=item,
         )
 
         assert response.status_code == 201
@@ -169,18 +157,19 @@ class TestItems:
         etag = response.headers['ETag']
 
         update_item = {
-            'name':'Peanut Butter',
-            'amount':2,
-            'productId':1000239983223,
+            'name': 'Peanut Butter',
+            'amount': 2,
+            'productId': 1000239983223,
         }
-        response = client.put(f'/items/{id}',
-            headers = {"If-Match": etag},
-            json = update_item
+        response = client.put(
+            f'items/{id}',
+            headers={"If-Match": etag},
+            json=update_item
         )
 
         assert response.status_code == 200
 
-        response = client.get(f'/items/{id}') 
+        response = client.get(f'items/{id}')
 
         assert response.status_code == 200
         assert dateutil.parser.parse(response.json['updatedAt']) > dateutil.parser.parse(updated)
@@ -189,62 +178,66 @@ class TestItems:
         client = app.test_client()
 
         item = {
-            'name':'Grape Jelly',
-            'amount':44,
-            'productId':1033239983223,
+            'name': 'Grape Jelly',
+            'amount': 44,
+            'productId': 1033239983223,
         }
 
-        response = client.post('/items/', 
-            headers = {"Content-Type": "application/json"},
-            json = item,
+        response = client.post(
+            'items/',
+            headers={"Content-Type": "application/json"},
+            json=item,
         )
 
         assert response.status_code == 201
 
         id = response.json['id']
-        updated = response.json['updatedAt']
         etag = response.headers['ETag']
 
         # no etag
-        response = client.put(f'/items/{id}',
-            headers = {"If-Match": ''},
-            json = item
+        response = client.put(
+            f'items/{id}',
+            headers={"If-Match": ''},
+            json=item
         )
 
         assert response.status_code == 428
 
         # changing read-only field updated
         update_item = {
-            'name':'Grape Jelly',
-            'amount':44,
-            'productId':1033239983223,
-            'updatedAt':'2021-03-30T14:55:30.500000'
+            'name': 'Grape Jelly',
+            'amount': 44,
+            'productId': 1033239983223,
+            'updatedAt': '2021-03-30T14:55:30.500000'
         }
-        response = client.put(f'/items/{id}',
-            headers = {"If-Match": etag},
-            json = update_item
+        response = client.put(
+            f'items/{id}',
+            headers={"If-Match": etag},
+            json=update_item
         )
 
         assert response.status_code == 422
 
         # no name
         update_item = {
-            'amount':44,
+            'amount': 44,
         }
-        response = client.put(f'/items/{id}',
-            headers = {"If-Match": etag},
-            json = update_item
+        response = client.put(
+            f'items/{id}',
+            headers={"If-Match": etag},
+            json=update_item
         )
 
         assert response.status_code == 422
 
         # no amount
         update_item = {
-            'name':'Grape Jelly',
+            'name': 'Grape Jelly',
         }
-        response = client.put(f'/items/{id}',
-            headers = {"If-Match": etag},
-            json = update_item
+        response = client.put(
+            f'items/{id}',
+            headers={"If-Match": etag},
+            json=update_item
         )
 
         assert response.status_code == 422
@@ -253,183 +246,84 @@ class TestItems:
     def test_query(self, app):
         client = app.test_client()
 
-        # Add ingredients here so we can search by them
-        ingredients = [
+        items = (
             {
-                'name':'eggs'
+                'name': 'Kroger Eggs',
+                'amount': 12,
+                'productId': 123456,
             },
             {
-                'name':'chicken breast'
-            },
-        ]
-
-        # collect ingredient ids for searching later
-        ingredient_ids = {}
-
-        for ingredient in ingredients:
-            response = client.post('/ingredients/', 
-                headers = {"Content-Type": "application/json"},
-                json = ingredient,
-            )
-            assert response.status_code == 201
-
-            ingredient_ids[ingredient['name']] = response.json['id']
-
-        items = [
-            {
-                'name':'Kroger Eggs',
-                'amount':12,
-                'productId':123456,
-                'ingredientId':ingredient_ids['eggs']
+                'name': 'Kroger Chicken Breast',
+                'amount': 11,
+                'productId': 123,
             },
             {
-                'name':'Kroger Chicken Breast',
-                'amount':11,
-                'productId':123,
-                'ingredientId':ingredient_ids['chicken breast']
+                'name': 'Costco Chicken Breast',
+                'amount': 3,
+                'productId': 2323,
             },
             {
-                'name':'Costco Chicken Breast',
-                'amount':3,
-                'productId':2323,
-                'ingredientId':ingredient_ids['chicken breast']
+                'name': 'Aldi Beef Chuck',
+                'amount': 2,
+                'productId': 4444,
             },
             {
-                'name':'Aldi Beef Chuck',
-                'amount':2,
-                'productId':4444,
+                'name': 'Bananas',
+                'amount': 1,
             },
             {
-                'name':'Bananas',
-                'amount':1,
+                'name': 'Apples',
+                'amount': 5,
             },
-            {
-                'name':'Apples',
-                'amount':5,
-            },
-        ]
+        )
 
         for item in items:
-            response = client.post('/items/', 
-                headers = {"Content-Type": "application/json"},
-                json = item,
+            response = client.post(
+                'items/',
+                headers={"Content-Type": "application/json"},
+                json=item,
             )
             assert response.status_code == 201
 
-        response = client.get('/items/')
+        response = client.get('items/')
 
         assert response.status_code == 200
         assert len(response.json) == len(items)
 
-        # empty product id
-        search_product = {
-            'productIds':[],
-        }
-        response = client.get('/items/',
-            json = search_product
-        )
+        # start of queries
+        query_resp = [
+            ({'productId': -1}, {'code': 422}),
+            ({'productId': 123}, {'code': 200, 'len': 1}),
+            ({'productId': 11}, {'code': 200, 'len': 0}),
+            ({"name": ''}, {'code': 422}),
+            ({"name": 'Kroger'}, {'code': 200, 'len': 2}),
+            ({"name": 'Winco'}, {'code': 200, 'len': 0}),
+        ]
 
-        assert response.status_code == 422
+        for query, resp in query_resp:
+            response = client.get(
+                'items/',
+                headers={'Content-Type': 'application/json'},
+                query_string=query
+            )
 
-        # single product id
-        search_product = {
-            'productIds':[123],
-        }
-        response = client.get('/items/',
-            json = search_product
-        )
-
-        assert response.status_code == 200
-        assert len(response.json) == 1
-        assert response.json[0]['productId'] == 123
-
-        # multiple product ids
-        search_product = {
-            'productIds':[123, 2323],
-        }
-        response = client.get('/items/',
-            json = search_product
-        )
-
-        assert response.status_code == 200
-        assert len(response.json) == 2
-
-        # empty ingredient id
-        search_ingredient = {
-            'ingredientIds':[],
-        }
-        response = client.get('/items/',
-            json = search_ingredient
-        )
-
-        assert response.status_code == 422
-
-        # single ingredient id
-        search_ingredient = {
-            'ingredientIds':[ingredient_ids['chicken breast']],
-        }
-        response = client.get('/items/',
-            json = search_ingredient
-        )
-
-        assert response.status_code == 200
-        assert len(response.json) == 2
-
-        # non-existent ingredient id
-        search_ingredient = {
-            'ingredientIds':[len(items)+1],
-        }
-        response = client.get('/items/',
-            json = search_ingredient
-        )
-
-        assert response.status_code == 200
-        assert len(response.json) == 0
-
-        # empty name
-        search_name = {
-            'names':[]
-        }
-        response = client.get('/items/',
-            json = search_name
-        )
-
-        assert response.status_code == 422
-
-        # single name
-        search_name = {
-            'names':['Kroger']
-        }
-        response = client.get('/items/',
-            json = search_name
-        )
-
-        assert response.status_code == 200
-        assert len(response.json) == 2
-
-        # multiple names
-        search_name = {
-            'names':['Kroger', 'Chicken']
-        }
-        response = client.get('/items/',
-            json = search_name
-        )
-
-        assert response.status_code == 200
-        assert len(response.json) == 3
+            assert response.status_code == resp['code']
+            if resp.get('len', None):
+                assert len(response.json) == resp['len']
 
     def test_delete(self, app):
         client = app.test_client()
 
         item = {
-            'name':'Kroger Eggs',
-            'amount':12,
-            'productId':123456,
+            'name': 'Kroger Eggs',
+            'amount': 12,
+            'productId': 123456,
         }
 
-        response = client.post('/items/', 
-            headers = {"Content-Type": "application/json"},
-            json = item,
+        response = client.post(
+            'items/',
+            headers={"Content-Type": "application/json"},
+            json=item,
         )
 
         assert response.status_code == 201
@@ -437,7 +331,8 @@ class TestItems:
         id = response.json['id']
         etag = response.headers['ETag']
 
-        response = client.delete(f'/items/{id}',
+        response = client.delete(
+            f'items/{id}',
             headers={'If-Match': etag}
         )
 
@@ -448,14 +343,15 @@ class TestItems:
 
         # DELETE requires an etag, so a valid item must exist and be deleted first
         item = {
-            'name':'Kroger Eggs',
-            'amount':12,
-            'productId':123456,
+            'name': 'Kroger Eggs',
+            'amount': 12,
+            'productId': 123456,
         }
 
-        response = client.post('/items/', 
-            headers = {"Content-Type": "application/json"},
-            json = item,
+        response = client.post(
+            'items/',
+            headers={"Content-Type": "application/json"},
+            json=item,
         )
 
         assert response.status_code == 201
@@ -464,20 +360,23 @@ class TestItems:
         etag = response.headers['ETag']
 
         # no etag
-        response = client.delete(f'/items/{id}',
+        response = client.delete(
+            f'items/{id}',
             headers={'If-Match': ''}
         )
 
         assert response.status_code == 428
 
-        response = client.delete(f'/items/{id}',
+        response = client.delete(
+            f'items/{id}',
             headers={'If-Match': etag}
         )
 
         assert response.status_code == 204
 
         # try to DELETE again
-        response = client.delete(f'/items/{id}',
+        response = client.delete(
+            f'items/{id}',
             headers={'If-Match': etag}
         )
 

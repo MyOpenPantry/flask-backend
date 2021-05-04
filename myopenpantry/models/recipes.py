@@ -1,8 +1,8 @@
 import sqlalchemy as sa
-from sqlalchemy.orm import relationship
 from myopenpantry.extensions.database import db
 
 from datetime import datetime
+
 
 class Recipe(db.Model):
     __tablename__ = "recipes"
