@@ -98,44 +98,58 @@ class TestRecipes:
     def test_post_invalid(self, app):
         client = app.test_client()
 
-        invalid_recipes = [
+        invalid_recipes = (
             # no name
-            {
+            ({
                 'notes': 'add whatever spices you want',
                 'rating': 999,
                 'steps': 'Preheat oven to 400. Coat broccoli florets in garlic, salt, and pepper. \
                           Put broccoli in single layer on baking tray in oven for 20 minutes, stir, \
                           and leave in for 10 more minutes',
-            },
+            }, 422),
             # non-int rating
-            {
+            ({
                 'name': 'Roasted Broccoli',
                 'notes': 'add whatever spices you want',
                 'rating': 'asdf',
                 'steps': 'Preheat oven to 400. Coat broccoli florets in garlic, salt, and pepper. \
                           Put broccoli in single layer on baking tray in oven for 20 minutes, \
                           stir, and leave in for 10 more minutes',
-            },
+            }, 422),
             # no steps
-            {
+            ({
                 'name': 'Roasted Broccoli',
                 'notes': 'add whatever spices you want',
                 'rating': 999,
-            },
+            }, 422),
             # empty
-            {
+            ({
 
-            }
-        ]
+            }, 422),
+            # valid, to test name integrity
+            ({
+                'name': 'A recipe',
+                'notes': 'add whatever spices you want',
+                'rating': 999,
+                'steps': 'a'
+            }, 201),
+            # invalid, to test name integrity
+            ({
+                'name': 'A recipe',
+                'notes': 'add whatever spices you want',
+                'rating': 999,
+                'steps': 'a'
+            }, 422)
+        )
 
-        for recipe in invalid_recipes:
+        for recipe, expected in invalid_recipes:
             response = client.post(
                 'recipes/',
                 headers={"Content-Type": "application/json"},
                 json=recipe,
             )
 
-            assert response.status_code == 422
+            assert response.status_code == expected
 
     def test_post_existing(self, app):
         client = app.test_client()
@@ -185,7 +199,7 @@ class TestRecipes:
         recipe['name'] = 'Cheesecake'
         response = client.put(
             f'recipes/{id}',
-            headers={"If-Match": etag},
+            headers={'If-Match': etag},
             json=recipe,
         )
 
@@ -207,15 +221,38 @@ class TestRecipes:
             json=recipe,
         )
 
-        assert response.status_code == 201
-
         id = response.json['id']
         etag = response.headers['ETag']
+
+        recipe2 = {
+            'name': 'Another Marinara',
+            'notes': 'italian sauce',
+            'rating': 1,
+            'steps': 'steps',
+        }
+
+        response = client.post(
+            'recipes/',
+            headers={"Content-Type": "application/json"},
+            json=recipe2,
+        )
+
+        assert response.status_code == 201
+
+        # try to change the first recipes name to the second to check name integrity
+        recipe['name'] = 'Another Marinara'
+        response = client.put(
+            f'recipes/{id}',
+            headers={'If-Match': etag},
+            json=recipe,
+        )
+
+        assert response.status_code == 422
 
         # no etag
         response = client.put(
             f'recipes/{id}',
-            headers={"If-Match": ''},
+            headers={'If-Match': ''},
             json=recipe,
         )
 
@@ -225,7 +262,7 @@ class TestRecipes:
         del recipe['name']
         response = client.put(
             f'recipes/{id}',
-            headers={"If-Match": etag},
+            headers={'If-Match': etag},
             json=recipe,
         )
 
@@ -236,7 +273,7 @@ class TestRecipes:
         del recipe['steps']
         response = client.put(
             f'recipes/{id}',
-            headers={"If-Match": etag},
+            headers={'If-Match': etag},
             json=recipe,
         )
 
@@ -247,7 +284,7 @@ class TestRecipes:
         recipe['rating'] = -1
         response = client.put(
             f'recipes/{id}',
-            headers={"If-Match": etag},
+            headers={'If-Match': etag},
             json=recipe,
         )
 
@@ -257,7 +294,7 @@ class TestRecipes:
         recipe['rating'] = 'not an int'
         response = client.put(
             f'recipes/{id}',
-            headers={"If-Match": etag},
+            headers={'If-Match': etag},
             json=recipe,
         )
 

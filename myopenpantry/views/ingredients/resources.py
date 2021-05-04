@@ -35,12 +35,8 @@ def handle_integrity_error_and_abort(e):
     # TODO log the error
     e = repr(e)
     errors = {'json': {}}
-    if e.find('UNIQUE constraint failed: items.name') != -1:
-        errors['json']['name'] = ["Item with that name already exists"]
-    elif e.find('UNIQUE constraint failed: items.product_id') != -1:
-        errors['json']['productId'] = ["Item with that product ID already exists"]
-    elif e.find('FOREIGN KEY constraint failed') != -1:
-        errors['json']['ingredientId'] = ["No such ingredient with that id"]
+    if e.find('UNIQUE constraint failed: ingredients.name') != -1:
+        errors['json']['name'] = ["Ingredient with that name already exists"]
 
     abort(422, errors=errors)
 

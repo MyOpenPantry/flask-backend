@@ -106,6 +106,15 @@ class TestIngredients:
         for k, v in ingredient.items():
             assert response.json[k] == v
 
+        # try again to test name integrity
+        response = client.post(
+            'ingredients/',
+            headers={"Content-Type": "application/json"},
+            json=ingredient,
+        )
+
+        assert response.status_code == 422
+
     def test_post_invalid(self, app):
         client = app.test_client()
 
@@ -154,33 +163,47 @@ class TestIngredients:
     def test_put(self, app):
         client = app.test_client()
 
-        ingredient = {
-            'name': 'butter',
-        }
-
-        response = client.post(
-            'ingredients/',
-            headers={"Content-Type": "application/json"},
-            json=ingredient,
+        ingredients = (
+            {'name': 'butter'},
+            {'name': 'cheese'}
         )
 
-        assert response.status_code == 201
+        ingredient_info = {}
+        etags = {}
 
-        id = response.json['id']
-        etag = response.headers['ETag']
+        for ingredient in ingredients:
+            response = client.post(
+                'ingredients/',
+                headers={"Content-Type": "application/json"},
+                json=ingredient,
+            )
 
+            assert response.status_code == 201
+
+            ingredient_info[response.json['name']] = response.json
+            etags[response.json['name']] = response.headers['ETag']
+
+        # try to change butter to cheese to check name integrity
+        update_item = {
+            'name': 'cheese',
+        }
+        response = client.put(
+            f'ingredients/{ingredient_info["butter"]["id"]}',
+            headers={'If-Match': etags['butter']},
+            json=update_item
+        )
+
+        assert response.status_code == 422
+
+        # capitalize butter to try a valid name change
         update_item = {
             'name': 'Butter',
         }
         response = client.put(
-            f'ingredients/{id}',
-            headers={"If-Match": etag},
+            f'ingredients/{ingredient_info["butter"]["id"]}',
+            headers={'If-Match': etags['butter']},
             json=update_item
         )
-
-        assert response.status_code == 200
-
-        response = client.get(f'ingredients/{id}')
 
         assert response.status_code == 200
 
@@ -205,7 +228,7 @@ class TestIngredients:
         # no etag
         response = client.put(
             f'ingredients/{id}',
-            headers={"If-Match": ''},
+            headers={'If-Match': ''},
             json=ingredient
         )
 
@@ -215,7 +238,7 @@ class TestIngredients:
         update_item = {}
         response = client.put(
             f'ingredients/{id}',
-            headers={"If-Match": etag},
+            headers={'If-Match': etag},
             json=update_item
         )
 

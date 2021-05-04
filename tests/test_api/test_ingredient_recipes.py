@@ -7,27 +7,13 @@ class TestIngredientRecipes:
         ingredient_info = dict()
 
         ingredients = [
-            {
-                'name': 'Black Beans',
-            },
-            {
-                'name': 'Red Beans',
-            },
-            {
-                'name': 'Pineapple',
-            },
-            {
-                'name': 'Rice',
-            },
-            {
-                'name': 'Chicken Breast',
-            },
-            {
-                'name': 'Not Used',
-            },
-            {
-                'name': 'Tomato',
-            },
+            {'name': 'Black Beans'},
+            {'name': 'Red Beans'},
+            {'name': 'Pineapple'},
+            {'name': 'Rice'},
+            {'name': 'Chicken Breast'},
+            {'name': 'Not Used'},
+            {'name': 'Tomato'},
         ]
 
         for ingredient in ingredients:
@@ -141,27 +127,13 @@ class TestIngredientRecipes:
         ingredient_info = dict()
 
         ingredients = [
-            {
-                'name': 'Black Beans',
-            },
-            {
-                'name': 'Red Beans',
-            },
-            {
-                'name': 'Pineapple',
-            },
-            {
-                'name': 'Rice',
-            },
-            {
-                'name': 'Chicken Breast',
-            },
-            {
-                'name': 'Not Used',
-            },
-            {
-                'name': 'Tomato',
-            },
+            {'name': 'Black Beans'},
+            {'name': 'Red Beans'},
+            {'name': 'Pineapple'},
+            {'name': 'Rice'},
+            {'name': 'Chicken Breast'},
+            {'name': 'Not Used'},
+            {'name': 'Tomato'},
         ]
 
         for ingredient in ingredients:
@@ -225,11 +197,11 @@ class TestIngredientRecipes:
             recipe_ids[response.json['name']] = response.json['id']
 
         # link from recipes/id/ingredients
-        associations = [
-            ['Black Beans', 'Black Bean Pineapple Salsa', 2, '15oz cans'],
-            ['Pineapple', 'Black Bean Pineapple Salsa', 1, 'pineapple'],
-            ['Tomato', 'Fruit Salad', 0.5, 'tomato'],
-        ]
+        associations = (
+            ('Black Beans', 'Black Bean Pineapple Salsa', 2, '15oz cans'),
+            ('Pineapple', 'Black Bean Pineapple Salsa', 1, 'pineapple'),
+            ('Tomato', 'Fruit Salad', 0.5, 'tomato'),
+        )
 
         for i_name, r_name, amount, unit in associations:
             r_id = recipe_ids[r_name]
@@ -244,23 +216,21 @@ class TestIngredientRecipes:
             assert response.status_code == 204
 
         # link from ingredients/id/recipes
-        associations = [
-            ['Chicken Breast', 'Chicken Salad', 2, 'lbs'],
-            ['Rice', 'Red Beans and Rice', 2, 'cups'],
-            ['Tomato', 'Black Bean Pineapple Salsa', 2, 'tomato'],
-        ]
+        associations = (
+            (ingredient_info['Chicken Breast'][0], recipe_ids['Chicken Salad'], 2, 'lbs', 204),
+            (ingredient_info['Rice'][0], recipe_ids['Red Beans and Rice'], 2, 'cups', 204),
+            (ingredient_info['Tomato'][0], recipe_ids['Black Bean Pineapple Salsa'], 2, 'tomato', 204),
+            (ingredient_info['Tomato'][0], 999, 44, 'oz', 422),
+        )
 
-        for i_name, r_name, amount, unit in associations:
-            r_id = recipe_ids[r_name]
-            i_id, _ = ingredient_info[i_name]
-
+        for i_id, r_id, amount, unit, expected in associations:
             response = client.post(
                 f'ingredients/{i_id}/recipes',
                 headers={"Content-Type": "application/json"},
                 json={'recipeIngredients': [{'recipeId': r_id, 'amount': amount, 'unit': unit}]}
             )
 
-            assert response.status_code == 204
+            assert response.status_code == expected
 
     def test_unlink(self, app):
         client = app.test_client()
@@ -268,27 +238,13 @@ class TestIngredientRecipes:
         ingredient_info = dict()
 
         ingredients = [
-            {
-                'name': 'Black Beans',
-            },
-            {
-                'name': 'Red Beans',
-            },
-            {
-                'name': 'Pineapple',
-            },
-            {
-                'name': 'Rice',
-            },
-            {
-                'name': 'Chicken Breast',
-            },
-            {
-                'name': 'Not Used',
-            },
-            {
-                'name': 'Tomato',
-            },
+            {'name': 'Black Beans'},
+            {'name': 'Red Beans'},
+            {'name': 'Pineapple'},
+            {'name': 'Rice'},
+            {'name': 'Chicken Breast'},
+            {'name': 'Not Used'},
+            {'name': 'Tomato'},
         ]
 
         for ingredient in ingredients:

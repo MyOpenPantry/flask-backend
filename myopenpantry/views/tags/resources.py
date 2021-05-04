@@ -32,12 +32,8 @@ def handle_integrity_error_and_abort(e):
     # TODO log the error
     e = repr(e)
     errors = {'json': {}}
-    if e.find('UNIQUE constraint failed: items.name') != -1:
-        errors['json']['name'] = ["Item with that name already exists"]
-    elif e.find('UNIQUE constraint failed: items.product_id') != -1:
-        errors['json']['productId'] = ["Item with that product ID already exists"]
-    elif e.find('FOREIGN KEY constraint failed') != -1:
-        errors['json']['ingredientId'] = ["No such ingredient with that id"]
+    if e.find('UNIQUE constraint failed: tags.name') != -1:
+        errors['json']['name'] = ["Tag with that name already exists"]
 
     abort(422, errors=errors)
 
@@ -98,7 +94,7 @@ class TagsbyID(MethodView):
 
         blp.check_etag(tag, TagSchema)
 
-        RecipeSchema().update(tag, new_tag)
+        TagSchema().update(tag, new_tag)
 
         try:
             db.session.add(tag)
@@ -120,12 +116,8 @@ class TagsbyID(MethodView):
 
         blp.check_etag(tag, TagSchema)
 
-        try:
-            db.session.delete(tag)
-            db.session.commit()
-        except exc.DatabaseError:
-            db.session.rollback()
-            abort(422)
+        db.session.delete(tag)
+        db.session.commit()
 
 
 @blp.route('/<int:tag_id>/recipes')
@@ -156,9 +148,6 @@ class TagRecipes(MethodView):
         try:
             db.session.add(tag)
             db.session.commit()
-        except exc.IntegrityError as e:
-            db.session.rollback()
-            handle_integrity_error_and_abort(e)
         except exc.DatabaseError:
             db.session.rollback()
             abort(422, message="There was an error. Please try again.")

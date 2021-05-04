@@ -55,7 +55,7 @@ class TestItemIngredients:
         item1['ingredientId'] = ingredient_id
         response = client.put(
             f'items/{item1_id}',
-            headers={"If-Match": item1_etag},
+            headers={'If-Match': item1_etag},
             json=item1,
         )
 
@@ -163,7 +163,7 @@ class TestItemIngredients:
         item['ingredientId'] = ingredient_id
         response = client.put(
             f'items/{id}',
-            headers={"If-Match": etag},
+            headers={'If-Match': etag},
             json=item
         )
 
@@ -199,7 +199,7 @@ class TestItemIngredients:
         item['ingredientId'] = ingredient_id
         response = client.put(
             f'items/{id}',
-            headers={"If-Match": etag},
+            headers={'If-Match': etag},
             json=item
         )
 

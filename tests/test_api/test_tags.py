@@ -143,15 +143,25 @@ class TestTags:
 
         response = client.put(
             f'tags/{id}',
-            headers={"If-Match": etag},
+            headers={'If-Match': etag},
             json=tag,
         )
 
         assert response.status_code == 200
         assert response.json['name'] == tag['name']
 
-    def test_invalid_put(self, app):
+    def test_put_invalid(self, app):
         client = app.test_client()
+
+        tag = {'name': 'kosher'}
+
+        response = client.post(
+            'tags/',
+            headers={"Content-Type": "application/json"},
+            json=tag,
+        )
+
+        assert response.status_code == 201
 
         tag = {
             'name': 'vegetaria',
@@ -169,10 +179,19 @@ class TestTags:
         etag = response.headers['ETag']
         id = response.json['id']
 
+        # try to change vegetaria to kosher to check name integrity
+        response = client.put(
+            f'tags/{id}',
+            headers={'If-Match': etag},
+            json={'name': 'kosher'},
+        )
+
+        assert response.status_code == 422
+
         # no etag
         response = client.put(
             f'tags/{id}',
-            headers={"If-Match": ''},
+            headers={'If-Match': ''},
             json=tag,
         )
 
@@ -182,7 +201,7 @@ class TestTags:
         del tag['name']
         response = client.put(
             f'tags/{id}',
-            headers={"If-Match": etag},
+            headers={'If-Match': etag},
             json=tag,
         )
 
@@ -191,26 +210,14 @@ class TestTags:
     def test_query(self, app):
         client = app.test_client()
 
-        tags = [
-            {
-                'name': 'creole'
-            },
-            {
-                'name': 'vegetarian'
-            },
-            {
-                'name': 'side'
-            },
-            {
-                'name': 'meat'
-            },
-            {
-                'name': 'chicken thigh'
-            },
-            {
-                'name': 'chicken breast'
-            }
-        ]
+        tags = (
+            {'name': 'creole'},
+            {'name': 'vegetarian'},
+            {'name': 'side'},
+            {'name': 'meat'},
+            {'name': 'chicken thigh'},
+            {'name': 'chicken breast'}
+        )
 
         for tag in tags:
             response = client.post(
@@ -222,12 +229,12 @@ class TestTags:
             assert response.status_code == 201
 
         # start of queries
-        query_resp = [
+        query_resp = (
             ({'name': ''}, {'code': 422}),
             ({'name': 'meat'}, {'code': 200, 'len': 1}),
             ({'name': 'chicken'}, {'code': 200, 'len': 2}),
             ({'name': 'no such tag'}, {'code': 200, 'len': 0}),
-        ]
+        )
 
         for query, resp in query_resp:
             response = client.get(
@@ -236,7 +243,6 @@ class TestTags:
                 query_string=query
             )
 
-            print(response.json)
             assert response.status_code == resp['code']
             if resp.get('len', None):
                 assert len(response.json) == resp['len']
@@ -262,7 +268,7 @@ class TestTags:
 
         response = client.delete(
             f'tags/{id}',
-            headers={"If-Match": etag},
+            headers={'If-Match': etag},
         )
 
         assert response.status_code == 204
@@ -288,21 +294,21 @@ class TestTags:
         # no etag
         response = client.delete(
             f'tags/{id}',
-            headers={"If-Match": ''},
+            headers={'If-Match': ''},
         )
 
         assert response.status_code == 428
 
         response = client.delete(
             f'tags/{id}',
-            headers={"If-Match": etag},
+            headers={'If-Match': etag},
         )
 
         assert response.status_code == 204
 
         response = client.delete(
             f'tags/{id}',
-            headers={"If-Match": etag},
+            headers={'If-Match': etag},
         )
 
         assert response.status_code == 404

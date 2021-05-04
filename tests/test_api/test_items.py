@@ -102,59 +102,38 @@ class TestItems:
         client = app.test_client()
 
         # missing name
-        item = {
-            'amount': 0,
-            'productId': 000000,
-        }
-
-        response = client.post(
-            'items/',
-            headers={"Content-Type": "application/json"},
-            json=item,
+        item_resp = (
+            ({'amount': 0, 'productId': 000000}, 422),
+            ({
+                'name': 'Mustard',
+                'amount': 0,
+                'productId': 000000,
+                'ingredientId': 1
+            }, 422),
+            ({
+                'name': 'Kroger Eggs',
+                'amount': 12,
+                'productId': 123456,
+            }, 201),
+            ({
+                'name': 'Kroger Eggs',
+                'amount': 12,
+            }, 422),
+            ({
+                'name': 'Costco Eggs',
+                'amount': 12,
+                'productId': 123456,
+            }, 422),
         )
 
-        assert response.status_code == 422
+        for item, resp in item_resp:
+            response = client.post(
+                'items/',
+                headers={"Content-Type": "application/json"},
+                json=item,
+            )
 
-        # invalid ingredient
-        item = {
-            'name': 'Mustard',
-            'amount': 0,
-            'productId': 000000,
-            'ingredientId': 1
-        }
-
-        response = client.post(
-            'items/',
-            headers={"Content-Type": "application/json"},
-            json=item,
-        )
-
-        assert response.status_code == 422
-
-    def test_post_existing(self, app):
-        client = app.test_client()
-
-        item = {
-            'name': 'Kroger Eggs',
-            'amount': 12,
-            'productId': 123456,
-        }
-
-        response = client.post(
-            'items/',
-            headers={"Content-Type": "application/json"},
-            json=item,
-        )
-
-        assert response.status_code == 201
-
-        response = client.post(
-            'items/',
-            headers={"Content-Type": "application/json"},
-            json=item,
-        )
-
-        assert response.status_code == 422
+            assert response.status_code == resp
 
     def test_put(self, app):
         client = app.test_client()
@@ -267,7 +246,7 @@ class TestItems:
     def test_query(self, app):
         client = app.test_client()
 
-        items = [
+        items = (
             {
                 'name': 'Kroger Eggs',
                 'amount': 12,
@@ -296,7 +275,7 @@ class TestItems:
                 'name': 'Apples',
                 'amount': 5,
             },
-        ]
+        )
 
         for item in items:
             response = client.post(
