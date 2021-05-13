@@ -7,7 +7,7 @@ from .api import Api
 def create_api(app):
 
     api = Api(app)
-    CORS(app)
+    CORS(app, resources={r"/*": {"expose_headers": ['X-Pagination']}})
 
     for extension in (database,):
         extension.init_app(app)
