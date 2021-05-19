@@ -60,7 +60,7 @@ class TestItemIngredients:
         )
 
         assert response.status_code == 200
-        assert response.json['ingredientId'] == ingredient_id
+        assert response.json['ingredient']['id'] == ingredient_id
 
         response = client.get(f'items/{item1_id}/ingredient')
 
@@ -168,7 +168,7 @@ class TestItemIngredients:
         )
 
         assert response.status_code == 200
-        assert response.json['ingredientId'] == ingredient_id
+        assert response.json['ingredient']['id'] == ingredient_id
 
         # obtain the new etag for the item
         response = client.get(f'items/{id}')
@@ -204,7 +204,7 @@ class TestItemIngredients:
         )
 
         assert response.status_code == 200
-        assert response.json['ingredientId'] == ingredient_id
+        assert response.json['ingredient']['id'] == ingredient_id
 
         # obtain the new etag for the ingredient
         response = client.get(f'ingredients/{ingredient_id}')
