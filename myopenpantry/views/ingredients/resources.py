@@ -1,16 +1,14 @@
 from flask.views import MethodView
 from flask_smorest import abort
 
-from sqlalchemy import and_, exc
+from sqlalchemy import exc
 
 from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
-from myopenpantry.models import Recipe, Ingredient, Item, RecipeIngredient
+from myopenpantry.models import Ingredient
 
-from .schemas import (
-    IngredientSchema, IngredientQueryArgsSchema, IngredientItemsSchema,
-    BulkIngredientRecipesSchema, IngredientRecipesSchema
-)
+from .schemas import IngredientSchema, IngredientQueryArgsSchema
+from ..recipes.schemas import RecipeSchema
 from ..items.schemas import ItemSchema
 
 blp = Blueprint(
@@ -129,68 +127,10 @@ class IngredientsById(MethodView):
 class IngredientRecipes(MethodView):
 
     @blp.etag
-    @blp.response(200, IngredientRecipesSchema(many=True))
+    @blp.response(200, RecipeSchema(many=True))
     def get(self, ingredient_id):
         """Get recipes associated with the ingredient"""
         return Ingredient.query.get_or_404(ingredient_id).recipes
-
-    @blp.etag
-    @blp.arguments(BulkIngredientRecipesSchema)
-    @blp.response(204)
-    def post(self, args, ingredient_id):
-        """Add association between a recipe and ingredient"""
-        ingredient = Ingredient.query.get_or_404(ingredient_id)
-
-        recipe_ingredients = args.pop('recipe_ingredients', None)
-        for recipe_ingredient in recipe_ingredients:
-            # use .get() instead of .get_or_404(),
-            # because we want to return 422 if recipe_id doesn't exist since recipe_id is not passed in the URL
-            recipe = Recipe.query.get(recipe_ingredient['recipe_id'])
-
-            if recipe is None:
-                abort(422)
-
-            association = RecipeIngredient(amount=recipe_ingredient['amount'], unit=recipe_ingredient['unit'])
-            association.ingredient_id = ingredient_id
-            association.ingredient = ingredient
-            association.recipe_id = recipe.id
-            association.recipe = recipe
-
-            ingredient.recipes.append(association)
-            recipe.ingredients.append(association)
-
-        try:
-            db.session.add(ingredient)
-            db.session.add(recipe)
-            db.session.add(association)
-            db.session.commit()
-        except exc.DatabaseError:
-            db.session.rollback()
-            abort(422)
-
-
-@blp.route('/<int:ingredient_id>/recipes/<int:recipe_id>')
-class IngredientRecipesDelete(MethodView):
-
-    @blp.etag
-    @blp.response(204)
-    def delete(self, ingredient_id, recipe_id):
-        """Delete association between a recipe and ingredient"""
-        ingredient = Ingredient.query.get_or_404(ingredient_id)
-        recipe = Recipe.query.get_or_404(recipe_id) # noqa
-
-        # TODO would a join be better here?
-        association = RecipeIngredient.query.filter(
-            and_(RecipeIngredient.recipe_id == recipe_id, RecipeIngredient.ingredient_id == ingredient_id)
-        ).first()
-
-        if association is None:
-            abort(422)
-
-        blp.check_etag(ingredient, IngredientSchema)
-
-        db.session.delete(association)
-        db.session.commit()
 
 
 @blp.route('/<int:ingredient_id>/items')
@@ -201,51 +141,3 @@ class IngredientItems(MethodView):
     def get(self, ingredient_id):
         """Get items associated with the ingredient"""
         return Ingredient.query.get_or_404(ingredient_id).items
-
-    @blp.etag
-    @blp.arguments(IngredientItemsSchema)
-    @blp.response(204)
-    def post(self, args, ingredient_id):
-        """Add association between a recipe and ingredient"""
-        ingredient = Ingredient.query.get_or_404(ingredient_id)
-
-        item_id = args.pop('item_id', None)
-        item = Item.query.get(item_id)
-
-        if item is None:
-            abort(422)
-
-        ingredient.items.append(item)
-
-        try:
-            db.session.add(ingredient)
-            db.session.commit()
-        except exc.DatabaseError:
-            db.session.rollback()
-            abort(422)
-
-
-@blp.route('/<int:ingredient_id>/items/<int:item_id>')
-class IngredientItemsDelete(MethodView):
-
-    @blp.etag
-    @blp.response(204)
-    def delete(self, ingredient_id, item_id):
-        """Delete association between a recipe and ingredient"""
-        ingredient = Ingredient.query.get_or_404(ingredient_id)
-
-        item = Item.query.with_parent(ingredient).filter(Item.id == item_id).first()
-
-        if item is None:
-            abort(422)
-
-        blp.check_etag(ingredient, IngredientSchema)
-
-        ingredient.items.remove(item)
-
-        try:
-            db.session.add(ingredient)
-            db.session.commit()
-        except exc.DatabaseError:
-            db.session.rollback()
-            abort(422)

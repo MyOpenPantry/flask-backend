@@ -42,20 +42,11 @@ class TestRecipeTags:
 
             tag_ids.append(response.json['id'])
 
-        # add tags to the recipe from the recipe side
+        # add tags to the recipe
         response = client.post(
             f'recipes/{recipe_id}/tags',
             headers={'Content-Type': 'application/json'},
-            json={'tagIds': tag_ids[1:]}
-        )
-
-        assert response.status_code == 204
-
-        # add tags to the recipe from the tag side
-        response = client.post(
-            f'tags/{tag_ids[0]}/recipes',
-            headers={'Content-Type': 'application/json'},
-            json={'recipeIds': [recipe_id]}
+            json={'tagIds': tag_ids}
         )
 
         assert response.status_code == 204
@@ -122,16 +113,7 @@ class TestRecipeTags:
         response = client.post(
             f'recipes/{recipe_id}/tags',
             headers={'Content-Type': 'application/json'},
-            json={'tagIds': tag_ids[1:]}
-        )
-
-        assert response.status_code == 204
-
-        # do the same with the other tag, but by adding the recipe to the tag from tags/id/recipes
-        response = client.post(
-            f'tags/{tag_ids[0]}/recipes',
-            headers={'Content-Type': 'application/json'},
-            json={'recipeIds': [recipe_id]}
+            json={'tagIds': tag_ids}
         )
 
         assert response.status_code == 204
@@ -141,6 +123,10 @@ class TestRecipeTags:
 
         assert response.status_code == 200
         assert len(response.json) == len(tags)
+
+        # update the etag
+        response = client.get(f'recipes/{recipe_id}')
+        recipe_etag = response.headers['ETag']
 
         # delete the first tag from recipes/id/tags
         response = client.delete(
@@ -158,33 +144,10 @@ class TestRecipeTags:
 
         assert response.status_code == 422
 
-        # test deleting an invalid tag (for code coverage)
-        response = client.delete(
-            f'tags/{tag_ids[0]}/recipes/{recipe_id}',
-            headers={'If-Match': tag_etags[0]},
-        )
-
-        assert response.status_code == 422
-
         response = client.get(f'recipes/{recipe_id}/tags')
 
         assert response.status_code == 200
         assert len(response.json) == 2
-
-        # delete the second tag from tags/id/recipes
-        response = client.delete(
-            f'tags/{tag_ids[1]}/recipes/{recipe_id}',
-            headers={'If-Match': tag_etags[1]},
-        )
-
-        assert response.status_code == 204
-
-        response1 = client.get(f'recipes/{recipe_id}/tags')
-        response2 = client.get(f'tags/{tag_ids[1]}/recipes')
-
-        assert response1.status_code == response2.status_code == 200
-        assert len(response1.json) == 1
-        assert len(response2.json) == 0
 
     def test_link_invalid(self, app):
         client = app.test_client()
@@ -242,24 +205,6 @@ class TestRecipeTags:
         )
 
         assert response.status_code == 422
-
-        # valid tag, invalid recipe
-        response = client.post(
-            f'tags/{tag_ids[0]}/recipes',
-            headers={'Content-Type': 'application/json'},
-            json={'recipeIds': [recipe_id + 1]}
-        )
-
-        assert response.status_code == 422
-
-        # invalid tag, valid recipe
-        response = client.post(
-            f'tags/{tag_ids[1] + 1}/recipes',
-            headers={'Content-Type': 'application/json'},
-            json={'recipeIds': [recipe_id]}
-        )
-
-        assert response.status_code == 404
 
     def test_get_empty(self, app):
         client = app.test_client()

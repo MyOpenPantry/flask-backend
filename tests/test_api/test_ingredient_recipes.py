@@ -72,6 +72,7 @@ class TestIngredientRecipes:
                 json=recipe,
             )
 
+            print(response.json)
             assert response.status_code == 201
 
             recipe_ids[response.json['name']] = response.json['id']
@@ -92,7 +93,7 @@ class TestIngredientRecipes:
             response = client.post(
                 f'recipes/{r_id}/ingredients',
                 headers={"Content-Type": "application/json"},
-                json={'recipeIngredients': [{'ingredientId': i_id, 'amount': amount, 'unit': unit}]}
+                json=[{'ingredientId': i_id, 'amount': amount, 'unit': unit}]
             )
 
             assert response.status_code == 204
@@ -210,27 +211,10 @@ class TestIngredientRecipes:
             response = client.post(
                 f'recipes/{r_id}/ingredients',
                 headers={"Content-Type": "application/json"},
-                json={'recipeIngredients': [{'ingredientId': i_id, 'amount': amount, 'unit': unit}]}
+                json=[{'ingredientId': i_id, 'amount': amount, 'unit': unit}]
             )
 
             assert response.status_code == 204
-
-        # link from ingredients/id/recipes
-        associations = (
-            (ingredient_info['Chicken Breast'][0], recipe_ids['Chicken Salad'], 2, 'lbs', 204),
-            (ingredient_info['Rice'][0], recipe_ids['Red Beans and Rice'], 2, 'cups', 204),
-            (ingredient_info['Tomato'][0], recipe_ids['Black Bean Pineapple Salsa'], 2, 'tomato', 204),
-            (ingredient_info['Tomato'][0], 999, 44, 'oz', 422),
-        )
-
-        for i_id, r_id, amount, unit, expected in associations:
-            response = client.post(
-                f'ingredients/{i_id}/recipes',
-                headers={"Content-Type": "application/json"},
-                json={'recipeIngredients': [{'recipeId': r_id, 'amount': amount, 'unit': unit}]}
-            )
-
-            assert response.status_code == expected
 
     def test_unlink(self, app):
         client = app.test_client()
@@ -266,6 +250,23 @@ class TestIngredientRecipes:
                 'notes': 'Goes well with jerk chicken and rice',
                 'rating': 10,
                 'steps': 'put all ingredients in the bowl and stir',
+                'ingredients': [
+                    {
+                        'ingredientId': ingredient_info['Black Beans'][0],
+                        'amount': 2,
+                        'unit': '15oz cans',
+                    },
+                    {
+                        'ingredientId': ingredient_info['Pineapple'][0],
+                        'amount': 1,
+                        'unit': 'pineapple',
+                    },
+                    {
+                        'ingredientId': ingredient_info['Tomato'][0],
+                        'amount': 2,
+                        'unit': 'tomato',
+                    },
+                ]
             },
             {
                 'name': 'Red Beans and Rice',
@@ -308,12 +309,9 @@ class TestIngredientRecipes:
             recipe_info[response.json['name']] = (response.json['id'], response.headers['ETag'])
 
         associations = [
-            ['Black Beans', 'Black Bean Pineapple Salsa', 2, '15oz cans'],
-            ['Pineapple', 'Black Bean Pineapple Salsa', 1, 'pineapple'],
             ['Tomato', 'Fruit Salad', 0.5, 'tomato'],
             ['Chicken Breast', 'Chicken Salad', 2, 'lbs'],
             ['Rice', 'Red Beans and Rice', 2, 'cups'],
-            ['Tomato', 'Black Bean Pineapple Salsa', 2, 'tomato'],
         ]
 
         for i_name, r_name, amount, unit in associations:
@@ -323,34 +321,12 @@ class TestIngredientRecipes:
             response = client.post(
                 f'recipes/{r_id}/ingredients',
                 headers={"Content-Type": "application/json"},
-                json={'recipeIngredients': [{'ingredientId': i_id, 'amount': amount, 'unit': unit}]}
+                json=[{'ingredientId': i_id, 'amount': amount, 'unit': unit}]
             )
 
             assert response.status_code == 204
 
-        # delete recipe from ingredient/id/recipes
-        response = client.delete(
-            f"ingredients/{ingredient_info['Tomato'][0]}/recipes/{recipe_info['Black Bean Pineapple Salsa'][0]}",
-            headers={'If-Match': ingredient_info['Tomato'][1]}
-        )
-
-        assert response.status_code == 204
-
-        # verify only one entry was deleted
-        response = client.get(f"ingredients/{ingredient_info['Tomato'][0]}/recipes")
-
-        assert response.status_code == 200
-        assert len(response.json) == 1
-
-        # delete non-existant recipe from ingredient/id/recipes
-        response = client.delete(
-            f"ingredients/{ingredient_info['Not Used'][0]}/recipes/{recipe_info['Black Bean Pineapple Salsa'][0]}",
-            headers={'If-Match': ingredient_info['Not Used'][1]},
-        )
-
-        assert response.status_code == 422
-
-        # delete ingredient from recipes/id/ingredient
+        # delete ingredient
         response = client.delete(
             f"recipes/{recipe_info['Black Bean Pineapple Salsa'][0]}/ingredients/{ingredient_info['Black Beans'][0]}",
             headers={'If-Match': recipe_info['Black Bean Pineapple Salsa'][1]},
@@ -362,4 +338,4 @@ class TestIngredientRecipes:
         response = client.get(f"recipes/{recipe_info['Black Bean Pineapple Salsa'][0]}/ingredients")
 
         assert response.status_code == 200
-        assert len(response.json) == 1
+        assert len(response.json) == 2

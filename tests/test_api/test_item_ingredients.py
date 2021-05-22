@@ -85,22 +85,6 @@ class TestItemIngredients:
         )
 
         assert response.status_code == 201
-        item3_id = response.json['id']
-
-        # add association from ingredients/id/items
-        response = client.post(
-            f'ingredients/{ingredient_id}/items',
-            headers={'Content-Type': 'application/json'},
-            json={'itemId': item3_id}
-        )
-
-        assert response.status_code == 204
-
-        # verfiy it worked
-        response = client.get(f'items/{item3_id}/ingredient')
-
-        assert response.status_code == 200
-        assert response.json['id'] == ingredient_id
 
     def test_unlink(self, app):
         client = app.test_client()
@@ -206,33 +190,6 @@ class TestItemIngredients:
         assert response.status_code == 200
         assert response.json['ingredient']['id'] == ingredient_id
 
-        # obtain the new etag for the ingredient
-        response = client.get(f'ingredients/{ingredient_id}')
-
-        assert response.status_code == 200
-        etag = response.headers['ETag']
-
-        # delete the association from items/id/ingredient this time
-        response = client.delete(
-            f'ingredients/{ingredient_id}/items/{id}',
-            headers={'If-Match': etag},
-        )
-
-        assert response.status_code == 204
-
-        # check that the ingredient wasn't deleted
-        response = client.get(f'items/{id}')
-
-        assert response.status_code == 200
-
-        # try again to make sure abort is used when an incorrect item_id is used
-        response = client.delete(
-            f'ingredients/{ingredient_id}/items/{id}',
-            headers={'If-Match': etag},
-        )
-
-        assert response.status_code == 422
-
     # sqlite doesn't enforce foreign key constraints by default so test that it is enabled
     def test_link_invalid(self, app):
         client = app.test_client()
@@ -262,8 +219,6 @@ class TestItemIngredients:
 
         assert response.status_code == 201
 
-        item_id = response.json['id']
-
         # create an ingredient
         ingredient = {
             'name': 'rutabaga',
@@ -276,14 +231,3 @@ class TestItemIngredients:
         )
 
         assert response.status_code == 201
-
-        ingredient_id = response.json['id']
-
-        # invalid item id
-        response = client.post(
-            f'ingredients/{ingredient_id}/items',
-            headers={'Content-Type': 'application/json'},
-            json={'itemId': item_id + 1}
-        )
-
-        assert response.status_code == 422
