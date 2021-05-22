@@ -203,6 +203,7 @@ class TestRecipes:
             json=recipe,
         )
 
+        print(response.json)
         assert response.status_code == 200
 
     def test_invalid_put(self, app):
@@ -213,6 +214,7 @@ class TestRecipes:
             'notes': 'italian sauce',
             'rating': 1,
             'steps': 'steps',
+            'ingredients': [],
         }
 
         response = client.post(
@@ -229,6 +231,7 @@ class TestRecipes:
             'notes': 'italian sauce',
             'rating': 1,
             'steps': 'steps',
+            'ingredients': [],
         }
 
         response = client.post(
@@ -237,6 +240,7 @@ class TestRecipes:
             json=recipe2,
         )
 
+        print(response.json)
         assert response.status_code == 201
 
         # try to change the first recipes name to the second to check name integrity

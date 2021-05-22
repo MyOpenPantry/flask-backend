@@ -6,8 +6,7 @@ from sqlalchemy import exc
 from myopenpantry.extensions.api import Blueprint, SQLCursorPage
 from myopenpantry.extensions.database import db
 from myopenpantry.models import Tag
-
-import myopenpantry.views.recipes.schemas as RS
+from ..recipes.schemas import RecipeSchema, TagSchema, TagQueryArgsSchema
 
 blp = Blueprint(
     'Tags',
@@ -41,8 +40,8 @@ def handle_integrity_error_and_abort(e):
 class Tags(MethodView):
 
     @blp.etag
-    @blp.arguments(RS.TagQueryArgsSchema, location='query')
-    @blp.response(200, RS.TagSchema(many=True))
+    @blp.arguments(TagQueryArgsSchema, location='query')
+    @blp.response(200, TagSchema(many=True))
     @blp.paginate(SQLCursorPage)
     def get(self, args):
         """List tags"""
@@ -56,8 +55,8 @@ class Tags(MethodView):
         return ret.order_by(Tag.id)
 
     @blp.etag
-    @blp.arguments(RS.TagSchema)
-    @blp.response(201, RS.TagSchema)
+    @blp.arguments(TagSchema)
+    @blp.response(201, TagSchema)
     def post(self, new_tag):
         """Add a new tag"""
         tag = Tag(**new_tag)
@@ -79,21 +78,21 @@ class Tags(MethodView):
 class TagsbyID(MethodView):
 
     @blp.etag
-    @blp.response(200, RS.TagSchema)
+    @blp.response(200, TagSchema)
     def get(self, tag_id):
         """Get tag by ID"""
         return Tag.query.get_or_404(tag_id)
 
     @blp.etag
-    @blp.arguments(RS.TagSchema)
-    @blp.response(200, RS.TagSchema)
+    @blp.arguments(TagSchema)
+    @blp.response(200, TagSchema)
     def put(self, new_tag, tag_id):
         """Update an existing tag"""
         tag = Tag.query.get_or_404(tag_id)
 
-        blp.check_etag(tag, RS.TagSchema)
+        blp.check_etag(tag, TagSchema)
 
-        RS.TagSchema().update(tag, new_tag)
+        TagSchema().update(tag, new_tag)
 
         try:
             db.session.add(tag)
@@ -113,7 +112,7 @@ class TagsbyID(MethodView):
         """Delete a tag"""
         tag = Tag.query.get_or_404(tag_id)
 
-        blp.check_etag(tag, RS.TagSchema)
+        blp.check_etag(tag, TagSchema)
 
         db.session.delete(tag)
         db.session.commit()
@@ -123,7 +122,7 @@ class TagsbyID(MethodView):
 class TagRecipes(MethodView):
 
     @blp.etag
-    @blp.response(200, RS.RecipeSchema(many=True))
+    @blp.response(200, RecipeSchema(many=True))
     def get(self, tag_id):
         """Get recipes associated with a tag"""
         return Tag.query.get_or_404(tag_id).recipes

@@ -8,8 +8,8 @@ from myopenpantry.extensions.database import db
 from myopenpantry.models import Ingredient
 
 from .schemas import IngredientSchema, IngredientQueryArgsSchema
-import myopenpantry.views.recipes.schemas as RS
-import myopenpantry.views.items.schemas as IS
+from ..recipes.schemas import RecipeSchema
+from ..items.schemas import ItemSchema
 
 blp = Blueprint(
     'Ingredients',
@@ -127,7 +127,7 @@ class IngredientsById(MethodView):
 class IngredientRecipes(MethodView):
 
     @blp.etag
-    @blp.response(200, RS.RecipeSchema(many=True))
+    @blp.response(200, RecipeSchema(many=True))
     def get(self, ingredient_id):
         """Get recipes associated with the ingredient"""
         return Ingredient.query.get_or_404(ingredient_id).recipes
@@ -137,7 +137,7 @@ class IngredientRecipes(MethodView):
 class IngredientItems(MethodView):
 
     @blp.etag
-    @blp.response(200, IS.ItemSchema(many=True))
+    @blp.response(200, ItemSchema(many=True))
     def get(self, ingredient_id):
         """Get items associated with the ingredient"""
         return Ingredient.query.get_or_404(ingredient_id).items

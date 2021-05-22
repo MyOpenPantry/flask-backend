@@ -7,7 +7,7 @@ from myopenpantry.models import Recipe, Ingredient, Tag, RecipeIngredient
 
 from sqlalchemy import and_, exc
 
-from .schemas import RecipeSchema, RecipeQueryArgsSchema, RecipeIngredientSchema, TagSchema
+from .schemas import RecipeSchema, RecipeQueryArgsSchema, RIngredientSchema, TagSchema, RecipeTagSchema
 
 blp = Blueprint(
     'Recipes',
@@ -62,7 +62,6 @@ class Recipes(MethodView):
     def post(self, new_recipe):
         """Add a new recipe"""
         # tag_ids are required by the schema, so shouldn't need to check if they are none
-        tag_ids = new_recipe.pop('tag_ids', None)
         ingredients = new_recipe.pop('ingredients', None)
 
         recipe = Recipe(**new_recipe)
@@ -76,15 +75,6 @@ class Recipes(MethodView):
         except exc.DatabaseError:
             db.session.rollback()
             abort(422, message="There was an error. Please try again.")
-
-        if tag_ids is not None:
-            for tag_id in tag_ids:
-                tag = Tag.query.get(tag_id)
-
-                if tag is None:
-                    abort(422)
-
-                recipe.tags.append(tag)
 
         if ingredients is not None:
             for ringredient in ingredients:
@@ -123,7 +113,7 @@ class RecipesbyID(MethodView):
         return Recipe.query.get_or_404(recipe_id)
 
     @blp.etag
-    @blp.arguments(RecipeSchema(only=('name', 'steps', 'rating', 'notes')))
+    @blp.arguments(RecipeSchema)
     @blp.response(200, RecipeSchema)
     def put(self, new_recipe, recipe_id):
         """Update an existing recipe"""
@@ -131,9 +121,30 @@ class RecipesbyID(MethodView):
 
         blp.check_etag(recipe, RecipeSchema)
 
-        new_recipe.update({'ingredients': recipe.ingredients})
-        new_recipe.update({'recipe.tags': recipe.tags})
+        # grab these to be added back manually
+        ingredients = new_recipe.pop('ingredients', None)
+
+        # TODO schema complains about 'None is not list-like' if this isnt set
+        # assume its due to ingredients being part of the model?
+        new_recipe.update({'ingredients': []})
+
         RecipeSchema().update(recipe, new_recipe)
+
+        if ingredients is not None:
+            for ringredient in ingredients:
+                ingredient = Ingredient.query.get(ringredient['ingredient_id'])
+
+                if ingredient is None:
+                    abort(422)
+
+                association = RecipeIngredient(amount=ringredient['amount'], unit=ringredient['unit'])
+                association.ingredient_id = ingredient.id
+                association.ingredient = ingredient
+                association.recipe_id = recipe.id
+                association.recipe = recipe
+
+                ingredient.recipes.append(association)
+                recipe.ingredients.append(association)
 
         try:
             db.session.add(recipe)
@@ -173,7 +184,7 @@ class RecipeTags(MethodView):
         return Recipe.query.get_or_404(recipe_id).tags
 
     @blp.etag
-    @blp.arguments(RecipeSchema(only=('tag_ids',)))
+    @blp.arguments(RecipeTagSchema)
     @blp.response(204)
     def post(self, args, recipe_id):
         """Add association between a recipe and tag"""
@@ -226,13 +237,13 @@ class RecipeTagsDelete(MethodView):
 class RecipeIngredients(MethodView):
 
     @blp.etag
-    @blp.response(200, RecipeIngredientSchema(many=True))
+    @blp.response(200, RIngredientSchema(many=True))
     def get(self, recipe_id):
         """Get ingredients associated with a recipe"""
         return Recipe.query.get_or_404(recipe_id).ingredients
 
     @blp.etag
-    @blp.arguments(RecipeIngredientSchema(many=True))
+    @blp.arguments(RIngredientSchema(many=True))
     @blp.response(204)
     def post(self, args, recipe_id):
         """Add association between a recipe and ingredient"""

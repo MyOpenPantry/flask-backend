@@ -7,7 +7,7 @@ from myopenpantry.extensions.database import db
 from myopenpantry.models import Item
 
 from .schemas import ItemSchema, ItemQueryArgsSchema
-import myopenpantry.views.ingredients.schemas as IS
+from ..ingredients.schemas import IngredientSchema
 
 blp = Blueprint(
     'Items',
@@ -131,7 +131,7 @@ class ItemsById(MethodView):
 class ItemsIngredient(MethodView):
 
     @blp.etag
-    @blp.response(200, IS.IngredientSchema)
+    @blp.response(200, IngredientSchema)
     def get(self, item_id):
         """Get the ingredient associated with the item"""
         return Item.query.get_or_404(item_id).ingredient

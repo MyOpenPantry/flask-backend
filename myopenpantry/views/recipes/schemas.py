@@ -22,14 +22,14 @@ class TagQueryArgsSchema(Schema):
 
 
 # used to nest to make bulk recipe/ingredient associations
-class RecipeIngredientSchema(AutoSchema):
+class RIngredientSchema(AutoSchema):
     # don't allow the user to accidentally (or purposefully) change the recipe id
     # recipe_id = field_for(RecipeIngredient, 'recipe_id', dump_only=True, validate=ma.validate.Range(min=1))
     amount = ma.fields.Float(required=True, validate=ma.validate.Range(min=0.0))
     unit = ma.fields.Str(required=True, validate=ma.validate.Length(min=1))
 
     # ingredient_id is write only, the ingredient schema will be returned on GET
-    ingredient_id = ma.fields.Integer(validate=ma.validate.Range(min=0), load_only=True)
+    ingredient_id = ma.fields.Integer(validate=ma.validate.Range(min=0), load_only=True, required=True)
     ingredient = ma.fields.Nested(IngredientSchema, dump_only=True)
 
     recipe_id = field_for(RecipeIngredient, 'recipe_id', dump_only=True)
@@ -44,10 +44,9 @@ class RecipeSchema(AutoSchema):
     updated_at = field_for(Recipe, "updated_at", dump_only=True)
     rating = field_for(Recipe, 'rating', validate=ma.validate.Range(min=0))
 
-    ingredients = ma.fields.Nested(RecipeIngredientSchema, many=True, required=False)
+    ingredients = ma.fields.Nested(RIngredientSchema, many=True)
 
     # only used on POST to add tags to the recipe
-    tag_ids = ma.fields.List(ma.fields.Integer(validate=ma.validate.Range(min=1)), required=False, load_only=True)
     tags = ma.fields.Nested(TagSchema, many=True, dump_only=True)
 
     class Meta(AutoSchema.Meta):
@@ -56,3 +55,10 @@ class RecipeSchema(AutoSchema):
 
 class RecipeQueryArgsSchema(Schema):
     name = ma.fields.Str(validate=ma.validate.Length(min=1))
+
+
+class RecipeTagSchema(Schema):
+    tag_ids = ma.fields.List(
+        ma.fields.Int(strict=True, validate=ma.validate.Range(min=1)),
+        required=True, validate=ma.validate.Length(min=1)
+    )
