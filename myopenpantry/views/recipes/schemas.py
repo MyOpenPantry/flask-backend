@@ -44,10 +44,10 @@ class RecipeSchema(AutoSchema):
     updated_at = field_for(Recipe, "updated_at", dump_only=True)
     rating = field_for(Recipe, 'rating', validate=ma.validate.Range(min=0))
 
-    ingredients = ma.fields.Nested(RecipeIngredientSchema, many=True)
+    ingredients = ma.fields.Nested(RecipeIngredientSchema, many=True, required=False)
 
     # only used on POST to add tags to the recipe
-    tag_ids = ma.fields.List(ma.fields.Integer(validate=ma.validate.Range(min=1), load_only=True))
+    tag_ids = ma.fields.List(ma.fields.Integer(validate=ma.validate.Range(min=1)), required=False, load_only=True)
     tags = ma.fields.Nested(TagSchema, many=True, dump_only=True)
 
     class Meta(AutoSchema.Meta):

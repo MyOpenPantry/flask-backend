@@ -123,7 +123,7 @@ class RecipesbyID(MethodView):
         return Recipe.query.get_or_404(recipe_id)
 
     @blp.etag
-    @blp.arguments(RecipeSchema)
+    @blp.arguments(RecipeSchema(only=('name', 'steps', 'rating', 'notes')))
     @blp.response(200, RecipeSchema)
     def put(self, new_recipe, recipe_id):
         """Update an existing recipe"""
@@ -131,6 +131,8 @@ class RecipesbyID(MethodView):
 
         blp.check_etag(recipe, RecipeSchema)
 
+        new_recipe.update({'ingredients': recipe.ingredients})
+        new_recipe.update({'recipe.tags': recipe.tags})
         RecipeSchema().update(recipe, new_recipe)
 
         try:
