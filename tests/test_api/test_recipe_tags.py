@@ -124,6 +124,10 @@ class TestRecipeTags:
         assert response.status_code == 200
         assert len(response.json) == len(tags)
 
+        # update the etag
+        response = client.get(f'recipes/{recipe_id}')
+        recipe_etag = response.headers['ETag']
+
         # delete the first tag from recipes/id/tags
         response = client.delete(
             f'recipes/{recipe_id}/tags/{tag_ids[0]}',
