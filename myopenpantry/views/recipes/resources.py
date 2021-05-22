@@ -7,11 +7,7 @@ from myopenpantry.models import Recipe, Ingredient, Tag, RecipeIngredient
 
 from sqlalchemy import and_, exc
 
-from .schemas import (
-    RecipeSchema, RecipeQueryArgsSchema, RecipeTagSchema,
-    BulkRecipeIngredientSchema, RecipeIngredientSchema
-)
-from ..tags.schemas import TagSchema
+from .schemas import RecipeSchema, RecipeQueryArgsSchema, RecipeIngredientSchema, TagSchema
 
 blp = Blueprint(
     'Recipes',
@@ -65,6 +61,10 @@ class Recipes(MethodView):
     @blp.response(201, RecipeSchema)
     def post(self, new_recipe):
         """Add a new recipe"""
+        # tag_ids are required by the schema, so shouldn't need to check if they are none
+        tag_ids = new_recipe.pop('tag_ids', None)
+        ingredients = new_recipe.pop('ingredients', None)
+
         recipe = Recipe(**new_recipe)
 
         try:
@@ -74,6 +74,39 @@ class Recipes(MethodView):
             db.session.rollback()
             handle_integrity_error_and_abort(e)
         except exc.DatabaseError:
+            db.session.rollback()
+            abort(422, message="There was an error. Please try again.")
+
+        if tag_ids is not None:
+            for tag_id in tag_ids:
+                tag = Tag.query.get(tag_id)
+
+                if tag is None:
+                    abort(422)
+
+                recipe.tags.append(tag)
+
+        if ingredients is not None:
+            for ringredient in ingredients:
+                ingredient = Ingredient.query.get(ringredient['ingredient_id'])
+
+                if ingredient is None:
+                    abort(422)
+
+                association = RecipeIngredient(amount=ringredient['amount'], unit=ringredient['unit'])
+                association.ingredient_id = ingredient.id
+                association.ingredient = ingredient
+                association.recipe_id = recipe.id
+                association.recipe = recipe
+
+                ingredient.recipes.append(association)
+                recipe.ingredients.append(association)
+
+        # TODO is this necessary on each iteration?
+        try:
+            db.session.add(recipe)
+            db.session.commit()
+        except (exc.IntegrityError, exc.DatabaseError):
             db.session.rollback()
             abort(422, message="There was an error. Please try again.")
 
@@ -138,7 +171,7 @@ class RecipeTags(MethodView):
         return Recipe.query.get_or_404(recipe_id).tags
 
     @blp.etag
-    @blp.arguments(RecipeTagSchema)
+    @blp.arguments(RecipeSchema(only=('tag_ids',)))
     @blp.response(204)
     def post(self, args, recipe_id):
         """Add association between a recipe and tag"""
@@ -197,20 +230,19 @@ class RecipeIngredients(MethodView):
         return Recipe.query.get_or_404(recipe_id).ingredients
 
     @blp.etag
-    @blp.arguments(BulkRecipeIngredientSchema)
+    @blp.arguments(RecipeIngredientSchema(many=True))
     @blp.response(204)
     def post(self, args, recipe_id):
         """Add association between a recipe and ingredient"""
         recipe = Recipe.query.get_or_404(recipe_id)
 
-        recipe_ingredients = args.pop('recipe_ingredients', None)
-        for recipe_ingredient in recipe_ingredients:
-            ingredient = Ingredient.query.get(recipe_ingredient['ingredient_id'])
+        for ringredient in args:
+            ingredient = Ingredient.query.get(ringredient['ingredient_id'])
 
             if ingredient is None:
                 abort(422)
 
-            association = RecipeIngredient(amount=recipe_ingredient['amount'], unit=recipe_ingredient['unit'])
+            association = RecipeIngredient(amount=ringredient['amount'], unit=ringredient['unit'])
             association.ingredient_id = ingredient.id
             association.ingredient = ingredient
             association.recipe_id = recipe_id
