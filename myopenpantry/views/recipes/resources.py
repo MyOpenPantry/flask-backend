@@ -47,12 +47,32 @@ class Recipes(MethodView):
     def get(self, args):
         """List all recipes or filter by args"""
         name = args.pop('name', None)
+        can_make = args.pop('can_make', False)
 
         ret = Recipe.query.filter_by(**args)
 
         # TODO does marshmallow have a way to only allow one of these at a time?
         if name is not None:
             ret = ret.filter(Recipe.name.like(f"%{name}%"))
+
+        # TODO this doesn't check to see that the amount is enough to make the recipe,
+        # which will be difficult given that the units are user defined
+        if can_make:
+            # TODO do this with SQL. Need to brush up on how to accomplish this
+            # I can get the number of ingredients a recipe has, and the ingredients with items with amount > 0,
+            # but am having issues connecting all the dots...
+            cant_make = []
+            for recipe in ret.all():
+                has_all = True
+                for ring in recipe.ingredients:
+                    if (len(ring.ingredient.items) == 0) or not any(item.amount > 0 for item in ring.ingredient.items):
+                        has_all = False
+                        break
+
+                if not has_all:
+                    cant_make.append(recipe.id)
+
+            ret = ret.filter(~Recipe.id.in_(cant_make))
 
         return ret.order_by(Recipe.id)
 
