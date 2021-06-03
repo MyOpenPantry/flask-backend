@@ -55,6 +55,7 @@ class RecipeSchema(AutoSchema):
 
 class RecipeQueryArgsSchema(Schema):
     name = ma.fields.Str(validate=ma.validate.Length(min=1))
+    can_make = ma.fields.Bool(required=False)
 
 
 class RecipeTagSchema(Schema):
